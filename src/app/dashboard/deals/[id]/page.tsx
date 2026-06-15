@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+import { DealDetailView } from "@/components/deals/detail/deal-detail-view";
+import type { DealDetailPageProps } from "@/types/deal";
+
+export const metadata: Metadata = { title: "Deal details" };
+
+export default async function DealDetailPage({ params }: DealDetailPageProps) {
+  const { id } = await params;
+
+  return (
+    <div className="mx-auto max-w-[1500px]">
+      <DealDetailView dealId={id} />
+    </div>
+  );
+}
