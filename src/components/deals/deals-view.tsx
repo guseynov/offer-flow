@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getDeals } from "@/lib/api/deals";
 import {
@@ -9,7 +9,8 @@ import {
   parseDealFilters,
 } from "@/lib/deal-filters";
 import { mapDealDtosToDeals } from "@/lib/mappers/deal";
-import type { DealFilterKey, DealsRequestState } from "@/types/deal";
+import { dealKeys } from "@/lib/query-keys";
+import type { DealFilterKey } from "@/types/deal";
 import { DealsEmptyState } from "./deals-empty-state";
 import { DealsErrorState } from "./deals-error-state";
 import { DealsFilters } from "./deals-filters";
@@ -22,36 +23,14 @@ export function DealsView() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [requestState, setRequestState] = useState<DealsRequestState>({
-    status: "loading",
-    deals: [],
+  const dealsQuery = useQuery({
+    queryKey: dealKeys.all,
+    queryFn: getDeals,
+    select: mapDealDtosToDeals,
   });
 
   // Filters live in the URL so views are shareable and browser navigation restores them.
   const filters = parseDealFilters(new URLSearchParams(searchParams.toString()));
-
-  useEffect(() => {
-    let ignoreResponse = false;
-
-    getDeals()
-      .then((dealDtos) => {
-        if (!ignoreResponse) {
-          setRequestState({
-            status: "success",
-            deals: mapDealDtosToDeals(dealDtos),
-          });
-        }
-      })
-      .catch(() => {
-        if (!ignoreResponse) {
-          setRequestState({ status: "error", deals: [] });
-        }
-      });
-
-    return () => {
-      ignoreResponse = true;
-    };
-  }, []);
 
   function updateUrl(nextParams: URLSearchParams) {
     const queryString = nextParams.toString();
@@ -84,29 +63,15 @@ export function DealsView() {
     updateUrl(nextParams);
   }
 
-  async function retryRequest() {
-    setRequestState({ status: "loading", deals: [] });
-
-    try {
-      const dealDtos = await getDeals();
-      setRequestState({
-        status: "success",
-        deals: mapDealDtosToDeals(dealDtos),
-      });
-    } catch {
-      setRequestState({ status: "error", deals: [] });
-    }
-  }
-
-  if (requestState.status === "loading") {
+  if (dealsQuery.isPending) {
     return <DealsTableSkeleton />;
   }
 
-  if (requestState.status === "error") {
-    return <DealsErrorState onRetry={retryRequest} />;
+  if (dealsQuery.isError) {
+    return <DealsErrorState onRetry={() => void dealsQuery.refetch()} />;
   }
 
-  const visibleDeals = filterDeals(requestState.deals, filters);
+  const visibleDeals = filterDeals(dealsQuery.data, filters);
   const hasActiveFilters = hasActiveDealFilters(filters);
 
   return (

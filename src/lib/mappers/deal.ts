@@ -1,4 +1,10 @@
-import type { Deal, DealDetail, DealDto } from "@/types/deal";
+import type {
+  Deal,
+  DealDetail,
+  DealDto,
+  DealFormValues,
+  UpdateDealPayload,
+} from "@/types/deal";
 
 const categoryLabels: Record<string, string> = {
   "food-drink": "Food & drink",
@@ -55,4 +61,36 @@ export function mapDealDtoToDetail(dto: DealDto): DealDetail {
 
 export function mapDealDtosToDeals(dtos: DealDto[]): Deal[] {
   return dtos.map(mapDealDtoToDeal);
+}
+
+function toDateTimeLocalValue(isoDate: string): string {
+  return isoDate.slice(0, 16);
+}
+
+export function mapDealDtoToFormValues(dto: DealDto): DealFormValues {
+  return {
+    title: dto.title,
+    description: dto.description,
+    category: dto.category,
+    price: (dto.priceCents / 100).toFixed(2),
+    status: dto.status,
+    partnerId: dto.partnerId,
+    startsAt: toDateTimeLocalValue(dto.startsAt),
+    endsAt: toDateTimeLocalValue(dto.endsAt),
+  };
+}
+
+export function mapDealFormValuesToUpdatePayload(
+  values: DealFormValues,
+): UpdateDealPayload {
+  return {
+    title: values.title.trim(),
+    description: values.description.trim(),
+    category: values.category,
+    priceCents: Math.round(Number(values.price) * 100),
+    status: values.status,
+    partnerId: values.partnerId,
+    startsAt: new Date(`${values.startsAt}:00.000Z`).toISOString(),
+    endsAt: new Date(`${values.endsAt}:00.000Z`).toISOString(),
+  };
 }

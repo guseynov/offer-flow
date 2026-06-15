@@ -105,3 +105,41 @@ export type DealApiRouteContext = {
 export type DealDetailContentProps = {
   deal: DealDetail;
 };
+
+export type DealFormValues = {
+  title: string;
+  description: string;
+  category: DealCategory;
+  price: string;
+  status: DealStatus;
+  partnerId: string;
+  startsAt: string;
+  endsAt: string;
+};
+
+export type UpdateDealPayload = {
+  title: string;
+  description: string;
+  category: DealCategory;
+  priceCents: number;
+  status: DealStatus;
+  partnerId: string;
+  startsAt: string;
+  endsAt: string;
+};
+
+export type DealFormErrors = Partial<Record<keyof DealFormValues, string>>;
+
+export type PartnerOption = {
+  id: string;
+  name: string;
+};
+
+export type DealEditViewProps = {
+  dealId: string;
+};
+
+export type DealEditFormProps = {
+  dealId: string;
+  initialValues: DealFormValues;
+};

@@ -28,7 +28,15 @@ export function DealDetailContent({ deal }: DealDetailContentProps) {
             {deal.title}
           </h1>
         </div>
-        <StatusBadge status={deal.status} />
+        <div className="flex items-center gap-3">
+          <StatusBadge status={deal.status} />
+          <Link
+            href={`/dashboard/deals/${deal.id}/edit`}
+            className="inline-flex h-9 items-center rounded-lg bg-slate-900 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+          >
+            Edit deal
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
