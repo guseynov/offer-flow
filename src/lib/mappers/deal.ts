@@ -2,6 +2,8 @@ import type {
   Deal,
   DealDetail,
   DealDto,
+  DealCreateFormValues,
+  CreateDealPayload,
   DealFormValues,
   UpdateDealPayload,
 } from "@/types/deal";
@@ -83,6 +85,22 @@ export function mapDealDtoToFormValues(dto: DealDto): DealFormValues {
 export function mapDealFormValuesToUpdatePayload(
   values: DealFormValues,
 ): UpdateDealPayload {
+  return {
+    title: values.title.trim(),
+    description: values.description.trim(),
+    category: values.category,
+    priceCents: Math.round(Number(values.price) * 100),
+    status: values.status,
+    partnerId: values.partnerId,
+    startsAt: new Date(`${values.startsAt}:00.000Z`).toISOString(),
+    endsAt: new Date(`${values.endsAt}:00.000Z`).toISOString(),
+  };
+}
+
+
+export function mapDealCreateFormValuesToPayload(
+  values: DealCreateFormValues,
+): CreateDealPayload {
   return {
     title: values.title.trim(),
     description: values.description.trim(),

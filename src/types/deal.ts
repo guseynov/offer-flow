@@ -143,3 +143,31 @@ export type DealEditFormProps = {
   dealId: string;
   initialValues: DealFormValues;
 };
+
+export type CreateDealStatus = "draft" | "pending";
+
+export type CreateDealPayload = {
+  title: string;
+  description: string;
+  category: DealCategory;
+  priceCents: number;
+  status: CreateDealStatus;
+  partnerId: string;
+  startsAt: string;
+  endsAt: string;
+};
+
+export type DealCreateFormValues = Omit<DealFormValues, "status"> & {
+  status: CreateDealStatus;
+};
+
+export type DealCreateFormErrors = Partial<
+  Record<keyof DealCreateFormValues, string>
+>;
+
+export type DealDecision = "approved" | "rejected";
+
+export type DealStatusActionsProps = {
+  dealId: string;
+  status: DealStatus;
+};

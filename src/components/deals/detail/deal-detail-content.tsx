@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { DealDetailContentProps } from "@/types/deal";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { DealStatusActions } from "./deal-status-actions";
 
 const detailRows = [
   { key: "categoryLabel", label: "Category" },
@@ -37,6 +38,16 @@ export function DealDetailContent({ deal }: DealDetailContentProps) {
             Edit deal
           </Link>
         </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-bold text-slate-900">Review decision</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Approve or reject this deal. Server mutation state stays in TanStack Query.
+          </p>
+        </div>
+        <DealStatusActions dealId={deal.id} status={deal.status} />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">

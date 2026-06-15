@@ -4,6 +4,8 @@ import {
   dealsResponseSchema,
 } from "@/lib/schemas/deal";
 import type {
+  CreateDealPayload,
+  DealDecision,
   DealDto,
   DealResponseDto,
   DealsResponseDto,
@@ -32,6 +34,33 @@ export async function updateDeal(
     `/deals/${dealId}`,
     payload,
   );
+  const validatedResponse = dealResponseSchema.parse(response.data);
+
+  return validatedResponse.data;
+}
+
+
+export async function createDeal(
+  payload: CreateDealPayload,
+): Promise<DealDto> {
+  const response = await apiClient.post<DealResponseDto>("/deals", payload);
+  const validatedResponse = dealResponseSchema.parse(response.data);
+
+  return validatedResponse.data;
+}
+
+
+export async function setDealDecision(
+  dealId: string,
+  decision: DealDecision,
+): Promise<DealDto> {
+  let endpoint = `/deals/${dealId}/approve`;
+
+  if (decision === "rejected") {
+    endpoint = `/deals/${dealId}/reject`;
+  }
+
+  const response = await apiClient.post<DealResponseDto>(endpoint);
   const validatedResponse = dealResponseSchema.parse(response.data);
 
   return validatedResponse.data;

@@ -11,6 +11,7 @@ import {
 import { mapDealDtosToDeals } from "@/lib/mappers/deal";
 import { dealKeys } from "@/lib/query-keys";
 import type { DealFilterKey } from "@/types/deal";
+import { DealsDensityControl } from "./deals-density-control";
 import { DealsEmptyState } from "./deals-empty-state";
 import { DealsErrorState } from "./deals-error-state";
 import { DealsFilters } from "./deals-filters";
@@ -81,6 +82,7 @@ export function DealsView() {
         onFilterChange={changeFilter}
         onClear={clearFilters}
       />
+      <DealsDensityControl />
       {visibleDeals.length === 0 && (
         <DealsEmptyState
           hasActiveFilters={hasActiveFilters}
