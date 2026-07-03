@@ -9,6 +9,7 @@ The project intentionally stays small. Each feature demonstrates a specific owne
 ## Screenshots
 
 ![OfferFlow offers list](docs/screenshots/offers-list.webp)
+![OfferFlow offers list (light mode)](docs/screenshots/offers-list-light.webp)
 
 ## Stack
 
