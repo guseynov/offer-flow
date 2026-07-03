@@ -6,11 +6,6 @@ A focused interview-prep project demonstrating frontend architecture for an inte
 
 The project intentionally stays small. Each feature demonstrates a specific ownership boundary in a modern React and Next.js application rather than simulating a production commerce platform.
 
-## Screenshots
-
-![OfferFlow offers list](docs/screenshots/offers-list.webp)
-![OfferFlow offers list (light mode)](docs/screenshots/offers-list-light.webp)
-
 ## Stack
 
 - Next.js App Router and React
