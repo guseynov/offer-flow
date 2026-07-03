@@ -9,6 +9,7 @@ The project intentionally stays small. Each feature demonstrates a specific owne
 - Next.js App Router and React
 - TypeScript in strict mode
 - Tailwind CSS
+- `next-themes` for system-aware light and dark mode
 - TanStack Query for server state and mutations
 - Zustand for shared client-only UI state
 - Formik for form state
@@ -20,11 +21,13 @@ The project intentionally stays small. Each feature demonstrates a specific owne
 ## Features
 
 - Responsive dashboard shell with summary metrics
+- Light and dark theme toggle with system-theme default
 - Offers table with loading, error, and empty states
 - Shareable title, status, and category filters
 - Comfortable and compact table density
 - Offer detail pages with cached server state
 - Create and edit forms with visible validation
+- Date and time range picker with theme-aware calendar states
 - Explicit approve and reject mutations
 - Query cache updates and invalidation after mutations
 - Typed DTO, UI model, form value, and API payload boundaries
@@ -98,7 +101,8 @@ src/
   components/
     dashboard/           Dashboard shell and reusable overview components
     deals/               List, filters, forms, detail UI, and mutations
-    providers/           TanStack Query provider
+    providers/           TanStack Query and theme providers
+    theme/               Theme toggle controls
   lib/
     api/                 Axios client and typed request functions
     mappers/             DTO, UI, form, and payload conversions
@@ -124,7 +128,7 @@ Quality checks:
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm run build
 ```
 
