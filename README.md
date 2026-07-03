@@ -1,6 +1,6 @@
-# Commerce Ops Console
+# OfferFlow
 
-A focused interview-prep project demonstrating frontend architecture for an internal commerce operations dashboard. Operators can browse, filter, create, edit, approve, and reject community deals through a typed mock API.
+A focused interview-prep project demonstrating frontend architecture for an internal operations dashboard for partner offers. Operators can browse, filter, create, edit, approve, reject, and prepare offers for publishing through a typed mock API.
 
 The project intentionally stays small. Each feature demonstrates a specific ownership boundary in a modern React and Next.js application rather than simulating a production commerce platform.
 
@@ -20,10 +20,10 @@ The project intentionally stays small. Each feature demonstrates a specific owne
 ## Features
 
 - Responsive dashboard shell with summary metrics
-- Deals table with loading, error, and empty states
+- Offers table with loading, error, and empty states
 - Shareable title, status, and category filters
 - Comfortable and compact table density
-- Deal detail pages with cached server state
+- Offer detail pages with cached server state
 - Create and edit forms with visible validation
 - Explicit approve and reject mutations
 - Query cache updates and invalidation after mutations
@@ -34,20 +34,20 @@ The project intentionally stays small. Each feature demonstrates a specific owne
 | Route | Purpose |
 | --- | --- |
 | `/dashboard` | Static operations overview |
-| `/dashboard/deals` | Deals table and URL filters |
-| `/dashboard/deals/new` | Create deal form |
-| `/dashboard/deals/[id]` | Deal details and review actions |
-| `/dashboard/deals/[id]/edit` | Edit deal form |
-| `/api/deals` | List and create mock deals |
-| `/api/deals/[id]` | Read and update one deal |
-| `/api/deals/[id]/approve` | Approve one deal |
-| `/api/deals/[id]/reject` | Reject one deal |
+| `/dashboard/deals` | Offers table and URL filters |
+| `/dashboard/deals/new` | Create offer form |
+| `/dashboard/deals/[id]` | Offer details and review actions |
+| `/dashboard/deals/[id]/edit` | Edit offer form |
+| `/api/deals` | List and create mock offers |
+| `/api/deals/[id]` | Read and update one offer |
+| `/api/deals/[id]/approve` | Approve one offer |
+| `/api/deals/[id]/reject` | Reject one offer |
 
 ## State ownership
 
 State is assigned according to its lifecycle and sharing requirements:
 
-- **Server data: TanStack Query.** Deal lists, detail records, request status, caching, mutations, and invalidation stay in the query layer. API records are never copied into Zustand.
+- **Server data: TanStack Query.** Offer lists, detail records, request status, caching, mutations, and invalidation stay in the query layer. API records are never copied into Zustand.
 - **Shared UI state: Zustand.** Table density is client-only presentation state shared by the density control and table. Components subscribe with selectors to avoid receiving unrelated state.
 - **Shareable filters: URL search params.** Search, status, and category filters survive reloads, support browser history, and can be shared as links.
 - **Form state: Formik.** Create and edit values, touched fields, submission state, and field errors belong to each form instance.
@@ -59,7 +59,7 @@ State is assigned according to its lifecycle and sharing requirements:
 
 The code deliberately avoids using one type everywhere:
 
-- `DealDto` represents the mock backend response.
+- `DealDto` represents the mock backend response shape used by the typed offer API.
 - `Deal` and `DealDetail` contain formatted, render-ready values.
 - `DealFormValues` and `DealCreateFormValues` contain browser-friendly strings such as decimal prices and `datetime-local` values.
 - `CreateDealPayload` and `UpdateDealPayload` contain API-ready integer cents and ISO timestamps.
@@ -77,7 +77,7 @@ A typical detail request follows this path:
 5. A mapper converts the DTO into a UI model.
 6. TanStack Query caches the server record using keys such as `['deal', dealId]`.
 
-Mutations validate payloads on the server, update the mock repository, seed or refresh the detail cache, and invalidate the deals list deliberately.
+Mutations validate payloads on the server, update the mock repository, seed or refresh the detail cache, and invalidate the offers list deliberately.
 
 ## Architecture notes
 

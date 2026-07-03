@@ -19,5 +19,5 @@ export type DealActivity = {
 export type SidebarNavItem = {
   label: string;
   href: string;
-  icon: string;
+  icon: ReactNode;
 };

@@ -1,109 +1,163 @@
 import Link from "next/link";
-import type { DealDetailContentProps } from "@/types/deal";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { Button } from "@/components/ui/button";
+import type { DealDetailContentProps } from "@/types/deal";
 import { DealStatusActions } from "./deal-status-actions";
-
-const detailRows = [
-  { key: "categoryLabel", label: "Category" },
-  { key: "partnerName", label: "Partner" },
-  { key: "formattedPrice", label: "Price" },
-] as const;
 
 export function DealDetailContent({ deal }: DealDetailContentProps) {
   return (
-    <div>
-      <Link
-        href="/dashboard/deals"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-emerald-700 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
+    <div className="mx-auto max-w-380">
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="inline-flex h-auto items-center gap-2 px-0 py-0 text-sm font-semibold text-(--text-muted) hover:text-(--text-strong)"
       >
-        <span aria-hidden="true">←</span>
-        Back to deals
-      </Link>
+        <Link href="/dashboard/deals">
+          <span aria-hidden="true">←</span>
+          Back to offers
+        </Link>
+      </Button>
 
-      <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-            {deal.id}
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-            {deal.title}
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <StatusBadge status={deal.status} />
-          <Link
-            href={`/dashboard/deals/${deal.id}/edit`}
-            className="inline-flex h-9 items-center rounded-lg bg-slate-900 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-          >
-            Edit deal
-          </Link>
-        </div>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-bold text-slate-900">Review decision</p>
-          <p className="mt-1 text-xs text-slate-500">
-            Approve or reject this deal. Server mutation state stays in TanStack Query.
-          </p>
-        </div>
-        <DealStatusActions dealId={deal.id} status={deal.status} />
-      </div>
-
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+      <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_22rem]">
         <div className="space-y-6">
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
-              Description
-            </p>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-700">
-              {deal.description}
-            </p>
-          </section>
+          <section className="surface-panel-strong rounded-[0.9rem] p-6 sm:p-8">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="ui-label">{deal.id}</p>
+              <StatusBadge status={deal.status} />
+            </div>
 
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-            <h2 className="text-lg font-bold text-slate-900">Deal schedule</h2>
-            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">Starts</dt>
-                <dd className="mt-2 text-sm font-semibold text-slate-800">{deal.startsAtLabel}</dd>
+            <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-4xl">
+                <h1 className="text-3xl font-bold tracking-[-0.03em] text-(--text-strong) sm:text-4xl">
+                  {deal.title}
+                </h1>
+                <p className="mt-3 max-w-3xl text-base leading-8 text-(--text-soft)">
+                  {deal.description}
+                </p>
               </div>
-              <div className="rounded-xl bg-slate-50 p-4">
-                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">Ends</dt>
-                <dd className="mt-2 text-sm font-semibold text-slate-800">{deal.endsAtLabel}</dd>
+              <Button asChild variant="secondary">
+                <Link href={`/dashboard/deals/${deal.id}/edit`}>
+                  Edit offer
+                </Link>
+              </Button>
+            </div>
+
+            <dl className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.8fr)]">
+              <div className="surface-panel-soft rounded-[1rem] px-4 py-4">
+                <dt className="ui-label">Offer window</dt>
+                <dd className="mt-3 text-sm font-semibold text-(--text-strong)">
+                  {deal.dateRangeLabel}
+                </dd>
+              </div>
+              <div className="surface-panel-soft rounded-[1rem] px-4 py-4">
+                <dt className="ui-label">Partner</dt>
+                <dd className="mt-3 text-sm font-semibold text-(--text-strong)">
+                  {deal.partnerName}
+                </dd>
+              </div>
+              <div className="surface-panel-soft rounded-[1rem] px-4 py-4">
+                <dt className="ui-label">Offer value</dt>
+                <dd className="mt-3 text-sm font-semibold text-(--text-strong)">
+                  {deal.formattedPrice}
+                </dd>
               </div>
             </dl>
           </section>
-        </div>
 
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-            <h2 className="text-lg font-bold text-slate-900">Deal summary</h2>
-            <dl className="mt-5 divide-y divide-slate-100">
-              {detailRows.map((row) => (
-                <div key={row.key} className="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
-                  <dt className="text-sm text-slate-500">{row.label}</dt>
-                  <dd className="text-right text-sm font-semibold text-slate-800">{deal[row.key]}</dd>
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(19rem,0.9fr)]">
+            <section className="surface-panel rounded-[0.9rem] p-6">
+              <h2 className="text-xl font-bold tracking-[-0.02em] text-(--text-strong)">
+                Offer details
+              </h2>
+              <dl className="mt-5 divide-y divide-white/6">
+                <div className="flex items-start justify-between gap-4 py-4 first:pt-0">
+                  <dt className="text-sm text-(--text-faint)">Category</dt>
+                  <dd className="text-right text-sm font-semibold text-(--text-strong)">
+                    {deal.categoryLabel}
+                  </dd>
                 </div>
-              ))}
-            </dl>
-          </section>
+                <div className="flex items-start justify-between gap-4 py-4">
+                  <dt className="text-sm text-(--text-faint)">Starts</dt>
+                  <dd className="text-right text-sm font-semibold text-(--text-strong)">
+                    {deal.startsAtLabel}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4 py-4">
+                  <dt className="text-sm text-(--text-faint)">Ends</dt>
+                  <dd className="text-right text-sm font-semibold text-(--text-strong)">
+                    {deal.endsAtLabel}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4 py-4 last:pb-0">
+                  <dt className="text-sm text-(--text-faint)">Last updated</dt>
+                  <dd className="text-right text-sm font-semibold text-(--text-strong)">
+                    {deal.updatedAtLabel}
+                  </dd>
+                </div>
+              </dl>
+            </section>
 
-          <section className="rounded-2xl bg-[#1c3528] p-6 text-white shadow-[0_16px_40px_rgba(19,35,27,0.12)]">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-300">Record history</p>
-            <dl className="mt-5 space-y-5">
-              <div>
-                <dt className="text-xs text-emerald-100/60">Created</dt>
-                <dd className="mt-1 text-sm font-semibold text-white">{deal.createdAtLabel}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-emerald-100/60">Last updated</dt>
-                <dd className="mt-1 text-sm font-semibold text-white">{deal.updatedAtLabel}</dd>
-              </div>
-            </dl>
+            <section className="surface-panel rounded-[0.9rem] p-6">
+              <h2 className="text-xl font-bold tracking-[-0.02em] text-(--text-strong)">
+                Record history
+              </h2>
+              <dl className="mt-5 space-y-5">
+                <div className="surface-panel-soft rounded-[1rem] px-4 py-4">
+                  <dt className="ui-label">Created</dt>
+                  <dd className="mt-3 text-sm font-semibold text-(--text-strong)">
+                    {deal.createdAtLabel}
+                  </dd>
+                </div>
+                <div className="surface-panel-soft rounded-[1rem] px-4 py-4">
+                  <dt className="ui-label">Last updated</dt>
+                  <dd className="mt-3 text-sm font-semibold text-(--text-strong)">
+                    {deal.updatedAtLabel}
+                  </dd>
+                </div>
+              </dl>
+            </section>
           </section>
         </div>
-      </div>
+
+        <aside className="surface-panel rounded-[0.9rem] p-6 xl:sticky xl:top-6 xl:self-start">
+          <p className="ui-label">Review decision</p>
+
+          <div className="mt-6">
+            <DealStatusActions dealId={deal.id} status={deal.status} />
+          </div>
+
+          <div className="mt-8 border-t border-white/6 pt-6">
+            <p className="ui-label">Record snapshot</p>
+            <dl className="mt-4 space-y-4">
+              <div>
+                <dt className="text-xs uppercase tracking-[0.12em] text-(--text-faint)">
+                  Offer ID
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-(--text-strong)">
+                  {deal.id}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-[0.12em] text-(--text-faint)">
+                  Partner
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-(--text-strong)">
+                  {deal.partnerName}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-[0.12em] text-(--text-faint)">
+                  Category
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-(--text-strong)">
+                  {deal.categoryLabel}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </aside>
+      </section>
     </div>
   );
 }

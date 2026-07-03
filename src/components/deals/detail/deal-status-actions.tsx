@@ -1,7 +1,8 @@
 "use client";
 
-import { cva } from "class-variance-authority";
+import { Check, Loader2, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { setDealDecision } from "@/lib/api/deals";
 import { dealKeys } from "@/lib/query-keys";
 import type {
@@ -9,25 +10,6 @@ import type {
   DealStatus,
   DealStatusActionsProps,
 } from "@/types/deal";
-
-const actionButtonVariants = cva(
-  "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-  {
-    variants: {
-      intent: {
-        approve:
-          "bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:outline-emerald-700",
-        reject:
-          "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50 focus-visible:outline-rose-700",
-      },
-      pending: {
-        true: "cursor-wait opacity-70",
-        false: "",
-      },
-    },
-    defaultVariants: { pending: false },
-  },
-);
 
 function isDecisionDisabled(
   currentStatus: DealStatus,
@@ -52,10 +34,7 @@ function getPendingDecision(
   return undefined;
 }
 
-function getActionLabel(
-  action: DealDecision,
-  pendingDecision: DealDecision | undefined,
-) {
+function getActionLabel(action: DealDecision, pendingDecision: DealDecision | undefined) {
   if (action === pendingDecision && action === "approved") {
     return "Approving…";
   }
@@ -86,35 +65,47 @@ export function DealStatusActions({ dealId, status }: DealStatusActionsProps) {
     mutation.isPending,
     mutation.variables,
   );
+  const showApprove = status === "draft" || status === "pending" || status === "rejected";
+  const showReject = status === "draft" || status === "pending" || status === "approved";
 
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={isDecisionDisabled(status, "approved", mutation.isPending)}
-          onClick={() => mutation.mutate("approved")}
-          className={actionButtonVariants({
-            intent: "approve",
-            pending: pendingDecision === "approved",
-          })}
-        >
-          {getActionLabel("approved", pendingDecision)}
-        </button>
-        <button
-          type="button"
-          disabled={isDecisionDisabled(status, "rejected", mutation.isPending)}
-          onClick={() => mutation.mutate("rejected")}
-          className={actionButtonVariants({
-            intent: "reject",
-            pending: pendingDecision === "rejected",
-          })}
-        >
-          {getActionLabel("rejected", pendingDecision)}
-        </button>
+        {showApprove ? (
+          <Button
+            disabled={isDecisionDisabled(status, "approved", mutation.isPending)}
+            onClick={() => mutation.mutate("approved")}
+            variant="success"
+            className="min-h-11 min-w-32"
+          >
+            {pendingDecision === "approved" ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Check size={14} />
+            )}
+            {status === "rejected" ? "Approve again" : getActionLabel("approved", pendingDecision)}
+          </Button>
+        ) : null}
+
+        {showReject ? (
+          <Button
+            disabled={isDecisionDisabled(status, "rejected", mutation.isPending)}
+            onClick={() => mutation.mutate("rejected")}
+            variant="danger"
+            className="min-h-11 min-w-32"
+          >
+            {pendingDecision === "rejected" ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <X size={14} />
+            )}
+            {status === "approved" ? "Reject instead" : getActionLabel("rejected", pendingDecision)}
+          </Button>
+        ) : null}
       </div>
+
       {mutation.isError && (
-        <p role="alert" className="mt-2 text-xs font-semibold text-rose-700">
+        <p role="alert" className="mt-3 text-xs font-semibold text-danger">
           The status could not be updated. Try again.
         </p>
       )}

@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: { default: "Commerce Ops", template: "%s | Commerce Ops" },
-  description: "Internal operations console for community commerce.",
+  title: { default: "OfferFlow", template: "%s | OfferFlow" },
+  description:
+    "Internal operations dashboard for reviewing, managing, and publishing partner offers.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-stone-100 text-slate-950">{children}</body>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="min-h-full antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

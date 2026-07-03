@@ -1,3 +1,14 @@
+import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { categoryFilterOptions, statusFilterOptions } from "@/lib/deal-filters";
 import type { DealsFiltersProps } from "@/types/deal";
 
@@ -7,64 +18,72 @@ export function DealsFilters({
   onClear,
 }: DealsFiltersProps) {
   return (
-    <div className="mb-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] sm:p-5">
+    <div className="surface-panel mb-5 rounded-[0.9rem] p-4 sm:p-5">
       <div className="grid gap-4 lg:grid-cols-[minmax(16rem,1fr)_13rem_13rem_auto] lg:items-end">
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Search deals
-          </span>
-          <input
-            type="search"
-            value={filters.query}
-            onChange={(event) => onFilterChange("q", event.target.value)}
-            placeholder="Search by title"
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-3 focus:ring-emerald-100"
-          />
+          <Label className="mb-2 block">search</Label>
+          <div className="relative">
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-(--text-faint)"
+            />
+            <Input
+              type="search"
+              value={filters.query}
+              onChange={(event) => onFilterChange("q", event.target.value)}
+              placeholder="search title or partner"
+              className="h-12 border-white/6 bg-surface-soft pl-10"
+            />
+          </div>
         </label>
 
-        <label className="block">
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Status
-          </span>
-          <select
-            value={filters.status ?? ""}
-            onChange={(event) => onFilterChange("status", event.target.value)}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-3 focus:ring-emerald-100"
+        <div className="block">
+          <Label className="mb-2 block">status</Label>
+          <Select
+            value={filters.status || "all"}
+            onValueChange={(value) =>
+              onFilterChange("status", value === "all" ? "" : value)
+            }
           >
-            <option value="">All statuses</option>
-            {statusFilterOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {statusFilterOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <label className="block">
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Category
-          </span>
-          <select
-            value={filters.category ?? ""}
-            onChange={(event) => onFilterChange("category", event.target.value)}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-3 focus:ring-emerald-100"
+        <div className="block">
+          <Label className="mb-2 block">category</Label>
+          <Select
+            value={filters.category || "all"}
+            onValueChange={(value) =>
+              onFilterChange("category", value === "all" ? "" : value)
+            }
           >
-            <option value="">All categories</option>
-            {categoryFilterOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categoryFilterOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <button
-          type="button"
-          onClick={onClear}
-          className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
-        >
-          Clear filters
-        </button>
+        <Button type="button" variant="secondary" onClick={onClear} className="h-12">
+          clear
+        </Button>
       </div>
     </div>
   );

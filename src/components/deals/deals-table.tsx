@@ -2,23 +2,32 @@
 
 import { cva } from "class-variance-authority";
 import Link from "next/link";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useDashboardUiStore } from "@/stores/dashboard-ui-store";
 import type { DealsTableProps } from "@/types/deal";
-import { StatusBadge } from "@/components/dashboard/status-badge";
 
 const columns = [
-  "Title",
+  "Offer",
   "Category",
   "Partner",
-  "Price",
+  "Value",
   "Status",
-  "Date range",
-  "Last updated",
+  "Window",
+  "Updated",
   "Actions",
 ];
 
 const headerCellVariants = cva(
-  "px-5 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 first:pl-6 last:pr-6",
+  "px-5 text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-faint) first:pl-6 last:pr-6",
   {
     variants: {
       density: {
@@ -38,74 +47,120 @@ const bodyCellVariants = cva("px-5", {
   },
 });
 
-function getDealCountLabel(count: number) {
+function getOfferCountLabel(count: number) {
   if (count === 1) {
-    return "deal";
+    return "offer";
   }
 
-  return "deals";
+  return "offers";
 }
 
 export function DealsTable({ deals }: DealsTableProps) {
   const tableDensity = useDashboardUiStore((state) => state.tableDensity);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+    <div className="ui-data-grid overflow-hidden rounded-[0.9rem]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1120px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/80">
+        <Table className="w-full min-w-280 border-collapse text-left">
+          <TableHeader>
+            <TableRow className="border-b border-(--surface-overlay-strong) bg-(--surface-overlay) hover:bg-(--surface-overlay)">
               {columns.map((column) => (
-                <th
+                <TableHead
                   key={column}
-                  scope="col"
                   className={headerCellVariants({ density: tableDensity })}
                 >
                   {column}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-(--surface-overlay-strong)">
             {deals.map((deal) => (
-              <tr key={deal.id} className="transition-colors hover:bg-emerald-50/30">
-                <td className={bodyCellVariants({ density: tableDensity, className: "max-w-64 pl-6" })}>
-                  <p className="truncate text-sm font-semibold text-slate-900">{deal.title}</p>
-                  <p className="mt-1 font-mono text-[11px] text-slate-400">{deal.id}</p>
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "whitespace-nowrap text-sm text-slate-600" })}>
+              <TableRow key={deal.id} className="ui-table-row">
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "max-w-64 pl-6",
+                  })}
+                >
+                  <p className="truncate text-sm font-semibold text-(--text-strong)">
+                    {deal.title}
+                  </p>
+                  <p className="mt-1 font-mono text-[11px] text-(--text-faint)">
+                    {deal.id}
+                  </p>
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "whitespace-nowrap text-sm text-(--text-soft)",
+                  })}
+                >
                   {deal.categoryLabel}
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "max-w-48 text-sm text-slate-600" })}>
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "max-w-48 text-sm text-(--text-soft)",
+                  })}
+                >
                   <span className="line-clamp-2">{deal.partnerName}</span>
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "whitespace-nowrap text-sm font-semibold tabular-nums text-slate-800" })}>
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className:
+                      "whitespace-nowrap text-sm font-semibold tabular-nums text-(--text-strong)",
+                  })}
+                >
                   {deal.formattedPrice}
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "whitespace-nowrap" })}>
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "whitespace-nowrap",
+                  })}
+                >
                   <StatusBadge status={deal.status} />
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "whitespace-nowrap text-sm text-slate-600" })}>
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "whitespace-nowrap text-sm text-(--text-soft)",
+                  })}
+                >
                   {deal.dateRangeLabel}
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "whitespace-nowrap text-sm text-slate-500" })}>
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "whitespace-nowrap text-sm text-(--text-faint)",
+                  })}
+                >
                   {deal.updatedAtLabel}
-                </td>
-                <td className={bodyCellVariants({ density: tableDensity, className: "pr-6" })}>
-                  <Link
-                    href={`/dashboard/deals/${deal.id}`}
-                    className="whitespace-nowrap text-sm font-semibold text-emerald-700 underline-offset-4 hover:text-emerald-900 hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
+                </TableCell>
+                <TableCell
+                  className={bodyCellVariants({
+                    density: tableDensity,
+                    className: "pr-6",
+                  })}
+                >
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto px-0 py-0 text-sm font-semibold text-primary hover:bg-transparent hover:text-(--text-strong)"
                   >
-                    View details
-                  </Link>
-                </td>
-              </tr>
+                    <Link href={`/dashboard/deals/${deal.id}`}>Review offer</Link>
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
-      <div className="border-t border-slate-100 bg-slate-50/60 px-6 py-3 text-xs font-medium text-slate-500">
-        Showing {deals.length} {getDealCountLabel(deals.length)}
+      <div className="border-t border-(--surface-overlay-strong) bg-(--surface-overlay) px-6 py-3 text-xs font-medium text-(--text-faint)">
+        Showing {deals.length} {getOfferCountLabel(deals.length)}
       </div>
     </div>
   );
