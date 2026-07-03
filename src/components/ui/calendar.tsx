@@ -6,12 +6,26 @@ import type { ComponentProps } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type CalendarProps = ComponentProps<typeof DayPicker> & {
+  theme?: "light" | "dark";
+};
+
 export function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  theme = "light",
   ...props
-}: ComponentProps<typeof DayPicker>) {
+}: CalendarProps) {
+  const singleSelectedDayButtonClasses =
+    theme === "dark"
+      ? "[&>button]:bg-primary [&>button]:text-primary-foreground [&>button:hover]:bg-primary [&>button:hover]:text-primary-foreground [&>button:focus-visible]:bg-primary [&>button:focus-visible]:text-primary-foreground"
+      : "[&>button]:bg-primary-strong [&>button]:text-primary-foreground [&>button:hover]:bg-primary-strong [&>button:hover]:text-primary-foreground [&>button:focus-visible]:bg-primary-strong [&>button:focus-visible]:text-primary-foreground";
+  const rangeEndpointButtonClasses =
+    theme === "dark"
+      ? "[&>button]:bg-primary [&>button]:text-primary-foreground [&>button:hover]:bg-primary [&>button:hover]:text-primary-foreground [&>button:focus-visible]:bg-primary [&>button:focus-visible]:text-primary-foreground"
+      : "[&>button]:bg-primary-strong [&>button]:text-primary-foreground [&>button:hover]:bg-primary-strong [&>button:hover]:text-primary-foreground [&>button:focus-visible]:bg-primary-strong [&>button:focus-visible]:text-primary-foreground";
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -31,7 +45,8 @@ export function Calendar({
           "size-7 rounded-md border border-(--surface-overlay-strong) bg-transparent p-0 text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-strong)",
         ),
         weekdays: "flex",
-        weekday: "w-9 rounded-md text-[0.75rem] font-medium text-(--text-faint)",
+        weekday:
+          "w-9 rounded-md text-[0.75rem] font-medium text-(--text-faint)",
         month_grid: "w-full border-collapse space-y-1",
         weeks: "mt-2",
         week: "mt-2 flex w-full",
@@ -47,14 +62,11 @@ export function Calendar({
           buttonVariants({ variant: "ghost" }),
           "size-9 rounded-md p-0 font-normal text-(--text-soft) aria-selected:opacity-100 hover:bg-(--surface-hover) hover:text-(--text-strong)",
         ),
-        selected:
-          "bg-primary-strong text-primary-foreground hover:bg-primary-strong hover:text-primary-foreground focus:bg-primary-strong focus:text-primary-foreground",
-        range_start:
-          "day-range-start rounded-md bg-primary-strong text-primary-foreground hover:bg-primary-strong hover:text-primary-foreground",
-        range_end:
-          "day-range-end rounded-md bg-primary-strong text-primary-foreground hover:bg-primary-strong hover:text-primary-foreground",
+        selected: singleSelectedDayButtonClasses,
+        range_start: cn("day-range-start rounded-md", rangeEndpointButtonClasses),
+        range_end: cn("day-range-end rounded-md", rangeEndpointButtonClasses),
         range_middle:
-          "aria-selected:bg-primary-soft aria-selected:text-(--text-strong) hover:aria-selected:bg-[color-mix(in_srgb,var(--primary-soft)_84%,var(--surface))]",
+          "[&>button]:rounded-none [&>button]:border-transparent [&>button]:bg-transparent [&>button]:!text-(--text-strong) [&>button:hover]:bg-transparent [&>button:hover]:!text-(--text-strong) [&>button:focus-visible]:bg-transparent [&>button:focus-visible]:!text-(--text-strong) aria-selected:bg-primary-soft",
         today: "border border-(--surface-overlay-strong) text-(--text-strong)",
         outside: "text-(--text-faint) opacity-60",
         disabled: "text-(--text-faint) opacity-40",

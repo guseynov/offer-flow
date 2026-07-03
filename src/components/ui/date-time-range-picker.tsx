@@ -3,12 +3,17 @@
 import * as React from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 import type { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 type DateTimeRangePickerProps = {
@@ -23,6 +28,18 @@ type DateTimeRangePickerProps = {
   defaultStartTime?: string;
   defaultEndTime?: string;
 };
+
+function subscribe() {
+  return () => {};
+}
+
+function useIsMounted() {
+  return React.useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+}
 
 function parseDatePart(value: string) {
   if (!value) {
@@ -121,6 +138,9 @@ export function DateTimeRangePicker({
   defaultEndTime = "18:00",
 }: DateTimeRangePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const mounted = useIsMounted();
+  const { resolvedTheme } = useTheme();
+  const activeTheme = mounted && resolvedTheme === "dark" ? "dark" : "light";
   const startDate = parseDatePart(startsAt);
   const endDate = parseDatePart(endsAt);
   const startTime = getTimePart(startsAt);
@@ -136,10 +156,14 @@ export function DateTimeRangePicker({
       return;
     }
 
-    onStartsAtChange(`${toDateValue(nextRange.from)}T${startTime || defaultStartTime}`);
+    onStartsAtChange(
+      `${toDateValue(nextRange.from)}T${startTime || defaultStartTime}`,
+    );
 
     if (nextRange.to) {
-      onEndsAtChange(`${toDateValue(nextRange.to)}T${endTime || defaultEndTime}`);
+      onEndsAtChange(
+        `${toDateValue(nextRange.to)}T${endTime || defaultEndTime}`,
+      );
     } else {
       onEndsAtChange("");
     }
@@ -152,7 +176,9 @@ export function DateTimeRangePicker({
       return;
     }
 
-    onStartsAtChange(`${toDateValue(startDate)}T${nextTime || defaultStartTime}`);
+    onStartsAtChange(
+      `${toDateValue(startDate)}T${nextTime || defaultStartTime}`,
+    );
   }
 
   function handleEndTimeChange(nextTime: string) {
@@ -190,6 +216,7 @@ export function DateTimeRangePicker({
             onSelect={handleRangeSelect}
             numberOfMonths={2}
             autoFocus
+            theme={activeTheme}
           />
         </PopoverContent>
       </Popover>

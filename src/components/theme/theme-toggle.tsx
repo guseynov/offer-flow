@@ -10,7 +10,11 @@ function subscribe() {
 }
 
 function useIsMounted() {
-  return useSyncExternalStore(subscribe, () => true, () => false);
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
 }
 
 export function ThemeToggle() {
