@@ -1,8 +1,14 @@
 # OfferFlow
 
+![OfferFlow dashboard preview](docs/screenshots/offerflow-hero.webp)
+
 A focused interview-prep project demonstrating frontend architecture for an internal operations dashboard for partner offers. Operators can browse, filter, create, edit, approve, reject, and prepare offers for publishing through a typed mock API.
 
 The project intentionally stays small. Each feature demonstrates a specific ownership boundary in a modern React and Next.js application rather than simulating a production commerce platform.
+
+## Screenshots
+
+![OfferFlow offers list](docs/screenshots/offers-list.webp)
 
 ## Stack
 
@@ -34,17 +40,17 @@ The project intentionally stays small. Each feature demonstrates a specific owne
 
 ## Routes
 
-| Route | Purpose |
-| --- | --- |
-| `/dashboard` | Static operations overview |
-| `/dashboard/deals` | Offers table and URL filters |
-| `/dashboard/deals/new` | Create offer form |
-| `/dashboard/deals/[id]` | Offer details and review actions |
-| `/dashboard/deals/[id]/edit` | Edit offer form |
-| `/api/deals` | List and create mock offers |
-| `/api/deals/[id]` | Read and update one offer |
-| `/api/deals/[id]/approve` | Approve one offer |
-| `/api/deals/[id]/reject` | Reject one offer |
+| Route                        | Purpose                          |
+| ---------------------------- | -------------------------------- |
+| `/dashboard`                 | Static operations overview       |
+| `/dashboard/deals`           | Offers table and URL filters     |
+| `/dashboard/deals/new`       | Create offer form                |
+| `/dashboard/deals/[id]`      | Offer details and review actions |
+| `/dashboard/deals/[id]/edit` | Edit offer form                  |
+| `/api/deals`                 | List and create mock offers      |
+| `/api/deals/[id]`            | Read and update one offer        |
+| `/api/deals/[id]/approve`    | Approve one offer                |
+| `/api/deals/[id]/reject`     | Reject one offer                 |
 
 ## State ownership
 
