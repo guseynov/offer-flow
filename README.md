@@ -2,12 +2,12 @@
 
 ![OfferFlow dashboard preview](docs/screenshots/offerflow-hero.webp)
 
-# Live link
-https://offer-flow-console.vercel.app/
-
 A focused interview-prep project demonstrating frontend architecture for an internal operations dashboard for partner offers. Operators can browse, filter, create, edit, approve, reject, and prepare offers for publishing through a typed mock API.
 
 The project intentionally stays small. Each feature demonstrates a specific ownership boundary in a modern React and Next.js application rather than simulating a production commerce platform.
+
+# Live link
+https://offer-flow-console.vercel.app/
 
 ## Stack
 
