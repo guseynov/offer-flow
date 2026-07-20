@@ -19,6 +19,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { createDeal } from "@/lib/api/deals";
 import { categoryFilterOptions } from "@/lib/deal-filters";
+import {
+  MAX_DEAL_DESCRIPTION_LENGTH,
+  MAX_DEAL_TITLE_LENGTH,
+} from "@/lib/deal-limits";
 import { mapDealCreateFormValuesToPayload } from "@/lib/mappers/deal";
 import { dealKeys } from "@/lib/query-keys";
 import { validateDealCreateForm } from "@/lib/validation/deal-create-form";
@@ -48,7 +52,10 @@ export function DealCreateForm() {
     mutationFn: (payload: CreateDealPayload) => createDeal(payload),
     onSuccess: async (createdDeal) => {
       queryClient.setQueryData(dealKeys.detail(createdDeal.id), createdDeal);
-      await queryClient.invalidateQueries({ queryKey: dealKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: dealKeys.all }),
+        queryClient.invalidateQueries({ queryKey: dealKeys.dashboard }),
+      ]);
       router.push(`/dashboard/deals/${createdDeal.id}`);
     },
   });
@@ -82,50 +89,66 @@ export function DealCreateForm() {
     });
   }
 
+  function getErrorId(field: keyof DealCreateFormValues) {
+    return getFieldError(field) ? `create-${field}-error` : undefined;
+  }
+
   return (
     <form onSubmit={formik.handleSubmit} noValidate className="space-y-6">
       <section className="surface-panel rounded-[0.9rem] p-5 sm:p-6">
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="block sm:col-span-2">
-            <Label>Offer title</Label>
+          <div className="block sm:col-span-2">
+            <Label htmlFor="create-title">Offer title</Label>
             <Input
+              id="create-title"
               name="title"
+              maxLength={MAX_DEAL_TITLE_LENGTH}
               value={formik.values.title}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               aria-invalid={Boolean(getFieldError("title"))}
+              aria-describedby={getErrorId("title")}
               className={clsx(getFieldClass("title"), "mt-2")}
             />
             {getFieldError("title") && (
-              <p className="mt-1.5 text-xs font-medium text-danger">
+              <p
+                id="create-title-error"
+                className="mt-1.5 text-xs font-medium text-danger"
+              >
                 {getFieldError("title")}
               </p>
             )}
-          </label>
+          </div>
 
-          <label className="block sm:col-span-2">
-            <Label>Offer description</Label>
+          <div className="block sm:col-span-2">
+            <Label htmlFor="create-description">Offer description</Label>
             <Textarea
+              id="create-description"
               name="description"
+              maxLength={MAX_DEAL_DESCRIPTION_LENGTH}
               rows={5}
               value={formik.values.description}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               aria-invalid={Boolean(getFieldError("description"))}
+              aria-describedby={getErrorId("description")}
               className={clsx(
                 getFieldClass("description"),
                 "mt-2 min-h-32 resize-y",
               )}
             />
             {getFieldError("description") && (
-              <p className="mt-1.5 text-xs font-medium text-danger">
+              <p
+                id="create-description-error"
+                className="mt-1.5 text-xs font-medium text-danger"
+              >
                 {getFieldError("description")}
               </p>
             )}
-          </label>
+          </div>
 
-          <label className="block">
-            <Label>Category</Label>
+          <div className="block">
+            <Label htmlFor="create-category">Category</Label>
             <Select
               value={formik.values.category}
               onValueChange={(value) =>
@@ -133,6 +156,9 @@ export function DealCreateForm() {
               }
             >
               <SelectTrigger
+                id="create-category"
+                aria-invalid={Boolean(getFieldError("category"))}
+                aria-describedby={getErrorId("category")}
                 className={clsx(getFieldClass("category"), "mt-2 h-11")}
               >
                 <SelectValue />
@@ -145,31 +171,44 @@ export function DealCreateForm() {
                 ))}
               </SelectContent>
             </Select>
-          </label>
+          </div>
 
-          <label className="block">
-            <Label>Offer value (USD)</Label>
+          <div className="block">
+            <Label htmlFor="create-price">Offer value (USD)</Label>
             <Input
+              id="create-price"
               name="price"
               inputMode="decimal"
+              maxLength={10}
               value={formik.values.price}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               aria-invalid={Boolean(getFieldError("price"))}
+              aria-describedby={
+                getFieldError("price")
+                  ? "create-price-help create-price-error"
+                  : "create-price-help"
+              }
               className={clsx(getFieldClass("price"), "mt-2")}
             />
             {getFieldError("price") && (
-              <p className="mt-1.5 text-xs font-medium text-danger">
+              <p
+                id="create-price-error"
+                className="mt-1.5 text-xs font-medium text-danger"
+              >
                 {getFieldError("price")}
               </p>
             )}
-            <p className="mt-1.5 text-xs text-(--text-faint)">
+            <p
+              id="create-price-help"
+              className="mt-1.5 text-xs text-(--text-faint)"
+            >
               Converted to integer cents on submit.
             </p>
-          </label>
+          </div>
 
-          <label className="block">
-            <Label>Workflow status</Label>
+          <div className="block">
+            <Label htmlFor="create-status">Workflow status</Label>
             <Select
               value={formik.values.status}
               onValueChange={(value) =>
@@ -177,6 +216,9 @@ export function DealCreateForm() {
               }
             >
               <SelectTrigger
+                id="create-status"
+                aria-invalid={Boolean(getFieldError("status"))}
+                aria-describedby={getErrorId("status")}
                 className={clsx(getFieldClass("status"), "mt-2 h-11")}
               >
                 <SelectValue />
@@ -189,10 +231,10 @@ export function DealCreateForm() {
                 ))}
               </SelectContent>
             </Select>
-          </label>
+          </div>
 
-          <label className="block">
-            <Label>Partner</Label>
+          <div className="block">
+            <Label htmlFor="create-partner">Partner</Label>
             <Select
               value={formik.values.partnerId}
               onValueChange={(value) =>
@@ -200,6 +242,9 @@ export function DealCreateForm() {
               }
             >
               <SelectTrigger
+                id="create-partner"
+                aria-invalid={Boolean(getFieldError("partnerId"))}
+                aria-describedby={getErrorId("partnerId")}
                 className={clsx(getFieldClass("partnerId"), "mt-2 h-11")}
               >
                 <SelectValue />
@@ -212,7 +257,7 @@ export function DealCreateForm() {
                 ))}
               </SelectContent>
             </Select>
-          </label>
+          </div>
         </div>
       </section>
 
@@ -220,11 +265,17 @@ export function DealCreateForm() {
         <h2 className="text-xl font-bold tracking-[-0.02em] text-(--text-strong)">
           Schedule
         </h2>
+        <p className="mt-1 text-sm text-(--text-muted)">
+          All offer dates and times are entered and stored in UTC.
+        </p>
 
         <div className="mt-5">
           <div className="block">
-            <Label>Offer window</Label>
+            <Label htmlFor="create-offer-window-date-range">
+              Offer window (UTC)
+            </Label>
             <DateTimeRangePicker
+              idPrefix="create-offer-window"
               startsAt={formik.values.startsAt}
               endsAt={formik.values.endsAt}
               onStartsAtChange={(value) =>
@@ -239,6 +290,13 @@ export function DealCreateForm() {
               }}
               startAriaInvalid={Boolean(getFieldError("startsAt"))}
               endAriaInvalid={Boolean(getFieldError("endsAt"))}
+              dateAriaDescribedBy={
+                [getErrorId("startsAt"), getErrorId("endsAt")]
+                  .filter(Boolean)
+                  .join(" ") || undefined
+              }
+              startAriaDescribedBy={getErrorId("startsAt")}
+              endAriaDescribedBy={getErrorId("endsAt")}
               className={clsx(
                 getFieldClass("startsAt"),
                 getFieldClass("endsAt"),
@@ -247,12 +305,18 @@ export function DealCreateForm() {
               defaultEndTime="18:00"
             />
             {getFieldError("startsAt") && (
-              <p className="mt-1.5 text-xs font-medium text-danger">
+              <p
+                id="create-startsAt-error"
+                className="mt-1.5 text-xs font-medium text-danger"
+              >
                 {getFieldError("startsAt")}
               </p>
             )}
             {getFieldError("endsAt") && (
-              <p className="mt-1.5 text-xs font-medium text-danger">
+              <p
+                id="create-endsAt-error"
+                className="mt-1.5 text-xs font-medium text-danger"
+              >
                 {getFieldError("endsAt")}
               </p>
             )}

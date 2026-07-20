@@ -1,10 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { getDeals } from "@/lib/api/deals";
 import {
-  filterDeals,
   hasActiveDealFilters,
   parseDealFilters,
 } from "@/lib/deal-filters";
@@ -24,16 +25,32 @@ export function DealsView() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const dealsQuery = useQuery({
-    queryKey: dealKeys.all,
-    queryFn: getDeals,
-    select: mapDealDtosToDeals,
-  });
 
   // Filters live in the URL so views are shareable and browser navigation restores them.
   const filters = parseDealFilters(new URLSearchParams(searchParams.toString()));
+  const [debouncedQuery, setDebouncedQuery] = useState(filters.query);
 
-  function updateUrl(nextParams: URLSearchParams) {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedQuery(filters.query);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [filters.query]);
+
+  const queryFilters = { ...filters, query: debouncedQuery };
+  const dealsQuery = useInfiniteQuery({
+    queryKey: dealKeys.list(queryFilters),
+    queryFn: ({ pageParam }) =>
+      getDeals({ filters: queryFilters, cursor: pageParam, limit: 20 }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.pageInfo.nextCursor ?? undefined,
+  });
+
+  function updateUrl(
+    nextParams: URLSearchParams,
+    navigation: "push" | "replace" = "push",
+  ) {
     const queryString = nextParams.toString();
     let destination = pathname;
 
@@ -41,7 +58,7 @@ export function DealsView() {
       destination = `${pathname}?${queryString}`;
     }
 
-    router.push(destination, { scroll: false });
+    router[navigation](destination, { scroll: false });
   }
 
   function changeFilter(key: DealFilterKey, value: string) {
@@ -54,7 +71,7 @@ export function DealsView() {
       nextParams.delete(key);
     }
 
-    updateUrl(nextParams);
+    updateUrl(nextParams, key === "q" ? "replace" : "push");
   }
 
   function clearFilters() {
@@ -72,7 +89,10 @@ export function DealsView() {
     return <DealsErrorState onRetry={() => void dealsQuery.refetch()} />;
   }
 
-  const visibleDeals = filterDeals(dealsQuery.data, filters);
+  const visibleDeals = mapDealDtosToDeals(
+    dealsQuery.data.pages.flatMap((page) => page.data),
+  );
+  const totalCount = dealsQuery.data.pages[0]?.pageInfo.total ?? 0;
   const hasActiveFilters = hasActiveDealFilters(filters);
 
   return (
@@ -89,7 +109,25 @@ export function DealsView() {
           onClearFilters={clearFilters}
         />
       )}
-      {visibleDeals.length > 0 && <DealsTable deals={visibleDeals} />}
+      {visibleDeals.length > 0 && (
+        <>
+          <DealsTable deals={visibleDeals} totalCount={totalCount} />
+          {dealsQuery.hasNextPage ? (
+            <div className="mt-4 flex justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={dealsQuery.isFetchingNextPage}
+                onClick={() => void dealsQuery.fetchNextPage()}
+              >
+                {dealsQuery.isFetchingNextPage
+                  ? "Loading more…"
+                  : "Load more offers"}
+              </Button>
+            </div>
+          ) : null}
+        </>
+      )}
     </>
   );
 }

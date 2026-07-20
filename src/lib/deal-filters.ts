@@ -48,11 +48,21 @@ export function parseDealFilters(searchParams: URLSearchParams): DealFilters {
   };
 }
 
-export function filterDeals(deals: Deal[], filters: DealFilters): Deal[] {
+type FilterableDeal = Pick<
+  Deal,
+  "title" | "partnerName" | "status" | "category"
+>;
+
+export function filterDeals<T extends FilterableDeal>(
+  deals: T[],
+  filters: DealFilters,
+): T[] {
   const normalizedQuery = filters.query.toLocaleLowerCase();
 
   return deals.filter((deal) => {
-    if (!deal.title.toLocaleLowerCase().includes(normalizedQuery)) {
+    const searchableText = `${deal.title} ${deal.partnerName}`.toLocaleLowerCase();
+
+    if (!searchableText.includes(normalizedQuery)) {
       return false;
     }
 

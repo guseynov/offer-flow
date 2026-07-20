@@ -9,14 +9,27 @@ import type {
   DealDto,
   DealResponseDto,
   DealsResponseDto,
+  DealsQuery,
   UpdateDealPayload,
 } from "@/types/deal";
 
-export async function getDeals(): Promise<DealDto[]> {
-  const response = await apiClient.get<DealsResponseDto>("/deals");
+export async function getDeals({
+  filters,
+  cursor,
+  limit = 20,
+}: DealsQuery): Promise<DealsResponseDto> {
+  const response = await apiClient.get<DealsResponseDto>("/deals", {
+    params: {
+      q: filters.query || undefined,
+      status: filters.status,
+      category: filters.category,
+      cursor,
+      limit,
+    },
+  });
   const validatedResponse = dealsResponseSchema.parse(response.data);
 
-  return validatedResponse.data;
+  return validatedResponse;
 }
 
 export async function getDealById(dealId: string): Promise<DealDto> {

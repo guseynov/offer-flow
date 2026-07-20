@@ -58,6 +58,7 @@ export function DealStatusActions({ dealId, status }: DealStatusActionsProps) {
       queryClient.setQueryData(dealKeys.detail(dealId), updatedDeal);
       void queryClient.invalidateQueries({ queryKey: dealKeys.detail(dealId) });
       void queryClient.invalidateQueries({ queryKey: dealKeys.all });
+      void queryClient.invalidateQueries({ queryKey: dealKeys.dashboard });
     },
   });
 

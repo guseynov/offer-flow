@@ -55,7 +55,7 @@ function getOfferCountLabel(count: number) {
   return "offers";
 }
 
-export function DealsTable({ deals }: DealsTableProps) {
+export function DealsTable({ deals, totalCount }: DealsTableProps) {
   const tableDensity = useDashboardUiStore((state) => state.tableDensity);
 
   return (
@@ -160,7 +160,7 @@ export function DealsTable({ deals }: DealsTableProps) {
         </Table>
       </div>
       <div className="border-t border-(--surface-overlay-strong) bg-(--surface-overlay) px-6 py-3 text-xs font-medium text-(--text-faint)">
-        Showing {deals.length} {getOfferCountLabel(deals.length)}
+        Loaded {deals.length} of {totalCount} {getOfferCountLabel(totalCount)}
       </div>
     </div>
   );

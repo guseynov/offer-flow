@@ -24,6 +24,17 @@ export type DealDto = {
 
 export type DealsResponseDto = {
   data: DealDto[];
+  pageInfo: {
+    total: number;
+    hasNextPage: boolean;
+    nextCursor: string | null;
+  };
+};
+
+export type DealsQuery = {
+  filters: DealFilters;
+  cursor?: string;
+  limit?: number;
 };
 
 export type DealResponseDto = {
@@ -72,6 +83,7 @@ export type DealDetailViewProps = {
 
 export type DealsTableProps = {
   deals: Deal[];
+  totalCount: number;
 };
 
 export type DealsFiltersProps = {
@@ -122,10 +134,10 @@ export type UpdateDealPayload = {
   description: string;
   category: DealCategory;
   priceCents: number;
-  status: DealStatus;
   partnerId: string;
   startsAt: string;
   endsAt: string;
+  expectedUpdatedAt: string;
 };
 
 export type DealFormErrors = Partial<Record<keyof DealFormValues, string>>;
@@ -142,6 +154,7 @@ export type DealEditViewProps = {
 export type DealEditFormProps = {
   dealId: string;
   initialValues: DealFormValues;
+  initialUpdatedAt: string;
 };
 
 export type CreateDealStatus = "draft" | "pending";

@@ -1,0 +1,7 @@
+export const MAX_JSON_REQUEST_BYTES = 32 * 1024;
+export const MAX_DEAL_TITLE_LENGTH = 120;
+export const MAX_DEAL_DESCRIPTION_LENGTH = 5_000;
+export const MAX_PARTNER_ID_LENGTH = 100;
+export const MAX_PARTNER_NAME_LENGTH = 120;
+export const MAX_DEAL_PRICE_CENTS = 100_000_000;
+

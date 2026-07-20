@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type DateTimeRangePickerProps = {
+  idPrefix: string;
   startsAt: string;
   endsAt: string;
   onStartsAtChange: (value: string) => void;
@@ -24,6 +25,9 @@ type DateTimeRangePickerProps = {
   onBlur?: () => void;
   startAriaInvalid?: boolean;
   endAriaInvalid?: boolean;
+  dateAriaDescribedBy?: string;
+  startAriaDescribedBy?: string;
+  endAriaDescribedBy?: string;
   className?: string;
   defaultStartTime?: string;
   defaultEndTime?: string;
@@ -37,6 +41,27 @@ function useIsMounted() {
   return React.useSyncExternalStore(
     subscribe,
     () => true,
+    () => false,
+  );
+}
+
+const twoMonthCalendarQuery = "(min-width: 640px)";
+
+function subscribeToCalendarLayout(callback: () => void) {
+  const mediaQuery = window.matchMedia(twoMonthCalendarQuery);
+  mediaQuery.addEventListener("change", callback);
+
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getTwoMonthCalendarSnapshot() {
+  return window.matchMedia(twoMonthCalendarQuery).matches;
+}
+
+function useTwoMonthCalendar() {
+  return React.useSyncExternalStore(
+    subscribeToCalendarLayout,
+    getTwoMonthCalendarSnapshot,
     () => false,
   );
 }
@@ -91,6 +116,7 @@ type TimePickerInputProps = {
   value: string;
   disabled: boolean;
   ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
 };
@@ -101,6 +127,7 @@ function TimePickerInput({
   value,
   disabled,
   ariaInvalid,
+  ariaDescribedBy,
   onChange,
   onBlur,
 }: TimePickerInputProps) {
@@ -116,6 +143,7 @@ function TimePickerInput({
         onBlur={onBlur}
         disabled={disabled}
         aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
         className={cn(
           "h-11 appearance-none border-white/6 bg-surface-soft font-normal scheme-dark [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
           ariaInvalid && "border-danger focus-visible:ring-danger",
@@ -126,6 +154,7 @@ function TimePickerInput({
 }
 
 export function DateTimeRangePicker({
+  idPrefix,
   startsAt,
   endsAt,
   onStartsAtChange,
@@ -133,12 +162,16 @@ export function DateTimeRangePicker({
   onBlur,
   startAriaInvalid,
   endAriaInvalid,
+  dateAriaDescribedBy,
+  startAriaDescribedBy,
+  endAriaDescribedBy,
   className,
   defaultStartTime = "09:00",
   defaultEndTime = "18:00",
 }: DateTimeRangePickerProps) {
   const [open, setOpen] = React.useState(false);
   const mounted = useIsMounted();
+  const showTwoMonths = useTwoMonthCalendar();
   const { resolvedTheme } = useTheme();
   const activeTheme = mounted && resolvedTheme === "dark" ? "dark" : "light";
   const startDate = parseDatePart(startsAt);
@@ -194,9 +227,11 @@ export function DateTimeRangePicker({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
+            id={`${idPrefix}-date-range`}
             type="button"
             variant="secondary"
             aria-invalid={hasError}
+            aria-describedby={dateAriaDescribedBy}
             data-empty={!range?.from}
             className={cn(
               "h-11 w-full justify-start rounded-lg border-white/6 bg-surface-soft px-3 text-left font-normal text-(--text-soft) hover:bg-surface-strong",
@@ -208,13 +243,17 @@ export function DateTimeRangePicker({
             <span>{formatRangeLabel(range)}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto p-0">
+        <PopoverContent
+          align="start"
+          collisionPadding={16}
+          className="max-h-[var(--radix-popover-content-available-height)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain p-0"
+        >
           <Calendar
             mode="range"
             defaultMonth={range?.from}
             selected={range}
             onSelect={handleRangeSelect}
-            numberOfMonths={2}
+            numberOfMonths={showTwoMonths ? 2 : 1}
             autoFocus
             theme={activeTheme}
           />
@@ -223,20 +262,22 @@ export function DateTimeRangePicker({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <TimePickerInput
-          id="offer-window-start-time"
-          label="Start time"
+          id={`${idPrefix}-start-time`}
+          label="Start time (UTC)"
           value={startTime}
           disabled={!startDate}
           ariaInvalid={startAriaInvalid}
+          ariaDescribedBy={startAriaDescribedBy}
           onChange={handleStartTimeChange}
           onBlur={onBlur}
         />
         <TimePickerInput
-          id="offer-window-end-time"
-          label="End time"
+          id={`${idPrefix}-end-time`}
+          label="End time (UTC)"
           value={endTime}
           disabled={!endDate}
           ariaInvalid={endAriaInvalid}
+          ariaDescribedBy={endAriaDescribedBy}
           onChange={handleEndTimeChange}
           onBlur={onBlur}
         />

@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -11,8 +10,8 @@
   --radius: 0.625rem;
   --background: #e8ebf0;
   --foreground: #12151c;
-  --font-app-sans: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
-  --font-app-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
+  --font-app-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-app-mono: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   --surface: #ffffff;
   --surface-strong: #dfe4ec;
   --surface-soft: #f3f5f8;
@@ -20,15 +19,15 @@
   --border: #c9d0db;
   --border-strong: #a9b2c0;
   --muted: #4d5563;
-  --muted-soft: #707988;
+  --muted-soft: #555e6c;
   --primary: #181c23;
   --primary-strong: #07090d;
   --primary-soft: rgba(7, 9, 13, 0.08);
-  --success: #158f68;
+  --success: #087052;
   --success-soft: rgba(21, 143, 104, 0.12);
-  --warning: #b86c00;
+  --warning: #8a4f00;
   --warning-soft: rgba(184, 108, 0, 0.12);
-  --danger: #d64045;
+  --danger: #b4232a;
   --danger-soft: rgba(214, 64, 69, 0.12);
   --focus-ring: rgba(7, 9, 13, 0.14);
   --surface-hover: rgba(18, 21, 28, 0.04);
@@ -40,7 +39,7 @@
   --text-strong: #12151c;
   --text-soft: #323846;
   --text-muted: #4d5563;
-  --text-faint: #707988;
+  --text-faint: #555e6c;
   --shadow-sm: 0 1px 2px rgba(8, 10, 14, 0.04), 0 6px 16px rgba(8, 10, 14, 0.05);
   --shadow-lg: 0 10px 28px rgba(8, 10, 14, 0.08);
   --card: var(--surface);
@@ -103,7 +102,7 @@
   --text-strong: #f8fafc;
   --text-soft: #d7dce5;
   --text-muted: #a5adbb;
-  --text-faint: #6e7787;
+  --text-faint: #788293;
   --shadow-sm:
     0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 36px rgba(0, 0, 0, 0.52);
   --shadow-lg: 0 24px 56px rgba(0, 0, 0, 0.62);
@@ -388,4 +387,19 @@ a {
 ::selection {
   background: var(--primary-soft);
   color: var(--text-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
