@@ -1,6 +1,6 @@
 import type {
   CreateDealPayload,
-  DealDecision,
+  DealDecisionPayload,
   UpdateDealPayload,
 } from "@/types/deal";
 import type {
@@ -51,6 +51,10 @@ export async function getDealById(dealId: string) {
   return (await getDealRepository()).getDealById(dealId);
 }
 
+export async function getDealHistory(dealId: string) {
+  return (await getDealRepository()).getDealHistory(dealId);
+}
+
 export async function updateDeal(
   dealId: string,
   payload: UpdateDealPayload,
@@ -64,9 +68,16 @@ export async function createDeal(payload: CreateDealPayload) {
 
 export async function setDealStatus(
   dealId: string,
-  status: DealDecision,
+  decision: "approved" | "rejected",
+  payload: DealDecisionPayload,
+  actor: { id: string; name: string },
 ) {
-  return (await getDealRepository()).setDealStatus(dealId, status);
+  return (await getDealRepository()).setDealStatus(dealId, {
+    ...payload,
+    decision,
+    actorId: actor.id,
+    actorName: actor.name,
+  });
 }
 
 export async function getDashboardData() {
@@ -77,4 +88,8 @@ export async function consumeMutationRateLimit(
   input: MutationRateLimitInput,
 ) {
   return (await getDealRepository()).consumeMutationRateLimit(input);
+}
+
+export async function checkRepositoryReadiness() {
+  return (await getDealRepository()).checkReadiness();
 }

@@ -46,3 +46,53 @@ INSERT INTO deals (
   )
 ON CONFLICT (id) DO NOTHING;
 
+INSERT INTO deals (
+  id, title, description, category, price_cents, status,
+  partner_id, partner_name, starts_at, ends_at, created_at, updated_at
+)
+SELECT
+  'deal-' || LPAD(sequence::TEXT, 3, '0'),
+  CASE (sequence - 7) % 11
+    WHEN 0 THEN 'Market Morning Bundle'
+    WHEN 1 THEN 'Restorative Class Pack'
+    WHEN 2 THEN 'Chef''s Weeknight Special'
+    WHEN 3 THEN 'Small Space Upgrade'
+    WHEN 4 THEN 'Family Discovery Pass'
+    WHEN 5 THEN 'Seasonal Service Package'
+    WHEN 6 THEN 'Weekend Workshop'
+    WHEN 7 THEN 'Local Favorites Box'
+    WHEN 8 THEN 'Wellness Starter Session'
+    WHEN 9 THEN 'Home Essentials Edit'
+    ELSE 'Neighborhood Experience'
+  END || ' ' || LPAD(sequence::TEXT, 3, '0'),
+  'A limited community offer for local members, with simple booking and clear redemption details.',
+  CASE (sequence - 7) % 6
+    WHEN 0 THEN 'food-drink'
+    WHEN 1 THEN 'wellness'
+    WHEN 2 THEN 'food-drink'
+    WHEN 3 THEN 'home'
+    WHEN 4 THEN 'experiences'
+    ELSE 'services'
+  END,
+  2500 + (sequence - 7) * 175,
+  CASE (sequence - 7) % 4
+    WHEN 0 THEN 'draft'
+    WHEN 1 THEN 'pending'
+    WHEN 2 THEN 'approved'
+    ELSE 'rejected'
+  END,
+  'partner-' || LPAD((((sequence - 7) % 6) + 1)::TEXT, 3, '0'),
+  CASE (sequence - 7) % 6
+    WHEN 0 THEN 'Northstar Roasters'
+    WHEN 1 THEN 'Form & Flow'
+    WHEN 2 THEN 'Table Eleven'
+    WHEN 3 THEN 'Common Goods'
+    WHEN 4 THEN 'City Discovery Museum'
+    ELSE 'Harbor Cycle Works'
+  END,
+  TIMESTAMPTZ '2026-07-01T09:00:00.000Z' + (sequence - 7) * INTERVAL '1 day',
+  TIMESTAMPTZ '2026-07-08T09:00:00.000Z' + (sequence - 7) * INTERVAL '1 day',
+  TIMESTAMPTZ '2026-06-16T00:00:00.000Z' + (sequence - 7) * INTERVAL '1 hour',
+  TIMESTAMPTZ '2026-06-18T00:00:00.000Z' + (sequence - 7) * INTERVAL '1 hour'
+FROM GENERATE_SERIES(7, 50) AS generated(sequence)
+ON CONFLICT (id) DO NOTHING;

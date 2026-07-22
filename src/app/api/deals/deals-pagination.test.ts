@@ -11,23 +11,25 @@ async function requestDeals(query = "") {
 }
 
 describe("deals pagination", () => {
-  it("returns a bounded page with a continuation cursor", async () => {
-    const firstResponse = await requestDeals("?limit=2");
+  it("returns bounded numbered pages with navigation metadata", async () => {
+    const firstResponse = await requestDeals("?page=1&limit=2");
     const firstPage = (await firstResponse.json()) as DealsResponseDto;
 
     expect(firstResponse.status).toBe(200);
     expect(firstPage.data).toHaveLength(2);
-    expect(firstPage.pageInfo.total).toBeGreaterThanOrEqual(6);
+    expect(firstPage.pageInfo.total).toBeGreaterThanOrEqual(50);
+    expect(firstPage.pageInfo.page).toBe(1);
+    expect(firstPage.pageInfo.pageSize).toBe(2);
+    expect(firstPage.pageInfo.hasPreviousPage).toBe(false);
     expect(firstPage.pageInfo.hasNextPage).toBe(true);
-    expect(firstPage.pageInfo.nextCursor).toBeTruthy();
 
-    const secondResponse = await requestDeals(
-      `?limit=2&cursor=${encodeURIComponent(firstPage.pageInfo.nextCursor ?? "")}`,
-    );
+    const secondResponse = await requestDeals("?page=2&limit=2");
     const secondPage = (await secondResponse.json()) as DealsResponseDto;
 
     expect(secondResponse.status).toBe(200);
     expect(secondPage.data).toHaveLength(2);
+    expect(secondPage.pageInfo.page).toBe(2);
+    expect(secondPage.pageInfo.hasPreviousPage).toBe(true);
     expect(secondPage.data.map((deal) => deal.id)).not.toEqual(
       firstPage.data.map((deal) => deal.id),
     );
@@ -38,16 +40,20 @@ describe("deals pagination", () => {
     const page = (await response.json()) as DealsResponseDto;
 
     expect(response.status).toBe(200);
-    expect(page.pageInfo.total).toBe(1);
-    expect(page.data[0]?.partnerName).toBe("Northstar Roasters");
+    expect(page.pageInfo.total).toBeGreaterThan(1);
+    expect(page.data.every((deal) => deal.partnerName === "Northstar Roasters")).toBe(
+      true,
+    );
   });
 
-  it("rejects invalid limits and cursors", async () => {
+  it("rejects invalid limits and page numbers", async () => {
     const invalidLimit = await requestDeals("?limit=101");
-    const invalidCursor = await requestDeals("?cursor=missing-record");
+    const invalidPage = await requestDeals("?page=0");
+    const nonNumericPage = await requestDeals("?page=next");
 
     expect(invalidLimit.status).toBe(400);
-    expect(invalidCursor.status).toBe(400);
+    expect(invalidPage.status).toBe(400);
+    expect(nonNumericPage.status).toBe(400);
   });
 
   it("serves complete dashboard aggregates without exposing every record", async () => {

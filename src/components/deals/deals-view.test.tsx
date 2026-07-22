@@ -12,19 +12,19 @@ const navigation = vi.hoisted(() => ({
 
 const queryState = vi.hoisted(() => ({
   data: {
-    pages: [
-      {
-        data: [] as typeof mockDeals,
-        pageInfo: { total: 0, hasNextPage: false, nextCursor: null },
-      },
-    ],
-    pageParams: [undefined],
+    data: [] as typeof mockDeals,
+    pageInfo: {
+      total: 0,
+      page: 1,
+      pageSize: 20,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    },
   },
   isPending: false,
   isError: false,
-  hasNextPage: false,
-  isFetchingNextPage: false,
-  fetchNextPage: vi.fn(),
+  isFetching: false,
   refetch: vi.fn(),
 }));
 
@@ -38,7 +38,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: () => queryState,
+  keepPreviousData: (data: unknown) => data,
+  useQuery: () => queryState,
 }));
 
 describe("DealsView navigation", () => {
@@ -46,12 +47,18 @@ describe("DealsView navigation", () => {
     navigation.push.mockReset();
     navigation.replace.mockReset();
     navigation.searchParams = new URLSearchParams();
-    queryState.data.pages[0] = {
-      data: mockDeals,
+    queryState.isPending = false;
+    queryState.isError = false;
+    queryState.isFetching = false;
+    queryState.data = {
+      data: [...mockDeals],
       pageInfo: {
         total: mockDeals.length,
+        page: 1,
+        pageSize: 20,
+        totalPages: 1,
+        hasPreviousPage: false,
         hasNextPage: false,
-        nextCursor: null,
       },
     };
   });
@@ -76,5 +83,55 @@ describe("DealsView navigation", () => {
     expect(screen.getByRole("searchbox", { name: "search" })).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "status" })).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "category" })).toBeTruthy();
+  });
+
+  it("keeps the focused search control mounted while results are loading", () => {
+    const view = render(<DealsView />);
+    const search = screen.getByRole("searchbox", { name: "search" });
+    search.focus();
+    expect(document.activeElement).toBe(search);
+
+    queryState.isPending = true;
+    view.rerender(<DealsView />);
+
+    expect(screen.getByRole("searchbox", { name: "search" })).toBe(search);
+    expect(document.activeElement).toBe(search);
+    expect(screen.getByLabelText("Loading offers")).toBeTruthy();
+  });
+
+  it("stores the selected page in the URL", () => {
+    queryState.data = {
+      data: mockDeals.slice(0, 2),
+      pageInfo: {
+        total: 6,
+        page: 1,
+        pageSize: 2,
+        totalPages: 3,
+        hasPreviousPage: false,
+        hasNextPage: true,
+      },
+    };
+    render(<DealsView />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(navigation.push).toHaveBeenCalledWith(
+      "/dashboard/deals?page=2",
+      { scroll: false },
+    );
+  });
+
+  it("returns to page one when a filter changes", () => {
+    navigation.searchParams = new URLSearchParams("page=3");
+    render(<DealsView />);
+
+    fireEvent.change(screen.getByPlaceholderText("search title or partner"), {
+      target: { value: "Northstar" },
+    });
+
+    expect(navigation.replace).toHaveBeenCalledWith(
+      "/dashboard/deals?q=Northstar",
+      { scroll: false },
+    );
   });
 });

@@ -2,22 +2,22 @@
 name: Commerce Ops Console
 description: Internal operations dashboard for reviewing and managing community deals.
 colors:
-  background: "#f5f5f4"
-  backgroundSoft: "#f4f3ef"
+  background: "#e8ebf0"
+  backgroundSoft: "#f3f5f8"
   surface: "#ffffff"
-  surfaceMuted: "#f8fafc"
-  sidebar: "#13231b"
-  ink: "#020617"
-  mutedInk: "#64748b"
-  border: "#e2e8f0"
-  primary: "#047857"
-  primarySoft: "#d1fae5"
-  success: "#047857"
-  successSoft: "#ecfdf5"
-  warning: "#b45309"
-  warningSoft: "#fffbeb"
-  danger: "#be123c"
-  dangerSoft: "#fff1f2"
+  surfaceMuted: "#d5dbe4"
+  sidebar: "#d8dde5"
+  ink: "#12151c"
+  mutedInk: "#4d5563"
+  border: "#c9d0db"
+  primary: "#181c23"
+  primarySoft: "rgba(7, 9, 13, 0.08)"
+  success: "#087052"
+  successSoft: "rgba(21, 143, 104, 0.12)"
+  warning: "#8a4f00"
+  warningSoft: "rgba(184, 108, 0, 0.12)"
+  danger: "#b4232a"
+  dangerSoft: "rgba(214, 64, 69, 0.12)"
   info: "#1d4ed8"
   infoSoft: "#eff6ff"
   revenue: "#6d28d9"
@@ -70,7 +70,7 @@ components:
     rounded: "{rounded.sm}"
     padding: "11px 20px"
   button-primary-hover:
-    backgroundColor: "#065f46"
+    backgroundColor: "#07090d"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.mutedInk}"
@@ -104,44 +104,44 @@ components:
 
 **Creative North Star: "The Review Desk"**
 
-This system is a working desk for internal operators, not a showcase. The mood is calm, precise, and operator-first: a light stone canvas, white working surfaces, and a dark evergreen shell that keeps navigation and focus state anchored without stealing attention from the task.
+This system is a working desk for internal operators, not a showcase. The mood is calm, precise, and operator-first: a cool gray canvas, white working surfaces, and a quiet neutral shell that keeps navigation anchored without stealing attention from the task.
 
-The visual language should read as dependable at a glance. Hierarchy does the heavy lifting, not ornament. Color is reserved for state, action, and feedback: emerald for primary action and success, amber for pending work, rose for rejection and error, blue for information, violet for revenue context. That keeps the screen legible in motion and makes status obvious without noise.
+The visual language should read as dependable at a glance. Hierarchy does the heavy lifting, not ornament. Primary controls are near-black; chroma is reserved for workflow state and feedback: green for success, amber for pending work, and red for rejection and error. That keeps the screen legible in motion and makes status obvious without noise.
 
 This system explicitly rejects the product anti-references in `PRODUCT.md`: marketing-style SaaS dashboards with ornamental hero sections and empty polish; playful or whimsical commerce UI that undercuts operational seriousness; over-decorated controls, novelty navigation, or custom affordances for standard tasks; glassy, noisy, or gradient-heavy treatment that competes with the work; and inconsistent component patterns across list, detail, and form screens.
 
 **Key Characteristics:**
 - Calm by default, decisive on state change.
 - One sans family across headings, labels, and body text.
-- Light canvas surfaces with one dark control shell.
+- Light neutral canvas surfaces with a low-contrast control shell.
 - Semantic color accents, not decorative color.
 - Familiar task UI with consistent controls across screens.
 
 ## Colors
 
-The palette is restrained and functional: near-white working surfaces, a dark evergreen shell, and a small semantic accent set for review state.
+The palette is restrained and functional: cool-gray working surfaces, a neutral navigation shell, and a small semantic accent set for review state. The `.dark` token block in `src/app/globals.css` is the source of truth for the corresponding dark palette.
 
 ### Primary
-- **Review Emerald** (`#047857`): primary actions, success state, selected indicators, and focus accents that need to feel confident rather than loud.
+- **Operator Ink** (`#181c23`): primary actions, selected indicators, and focus accents that need to feel confident rather than loud.
 
 ### Secondary
-- **Queue Amber** (`#b45309`): pending review, attention-needed chips, and compact highlights that should read as caution without becoming alarm.
+- **Queue Amber** (`#8a4f00`): pending review, attention-needed chips, and compact highlights that should read as caution without becoming alarm.
 
 ### Tertiary
-- **Reject Rose** (`#be123c`): reject state, validation errors, and negative feedback moments.
+- **Reject Red** (`#b4232a`): reject state, validation errors, and negative feedback moments.
 
 ### Neutral
-- **Stone Canvas** (`#f5f5f4`): the main page background.
-- **Soft Canvas** (`#f4f3ef`): supporting neutral used in the base CSS token layer.
+- **Cool Canvas** (`#e8ebf0`): the main page background.
+- **Soft Canvas** (`#f3f5f8`): supporting neutral used in the base CSS token layer.
 - **Pure Surface** (`#ffffff`): cards, panels, tables, and forms.
-- **Frost Surface** (`#f8fafc`): secondary table/header surfaces and low-emphasis fills.
-- **Evergreen Shell** (`#13231b`): sidebar and focused task panel.
-- **Slate Ink** (`#020617`): primary text and the strongest labels.
-- **Muted Slate** (`#64748b`): supporting copy, helper text, and metadata.
-- **Hairline Slate** (`#e2e8f0`): borders, separators, and control strokes.
+- **Frost Surface** (`#d5dbe4`): secondary table/header surfaces and low-emphasis fills.
+- **Neutral Shell** (`#d8dde5`): sidebar navigation surface.
+- **Slate Ink** (`#12151c`): primary text and the strongest labels.
+- **Muted Slate** (`#4d5563`): supporting copy, helper text, and metadata.
+- **Hairline Slate** (`#c9d0db`): borders, separators, and control strokes.
 
 ### Named Rules
-**The Shell Rule.** Dark color is reserved for the sidebar and the focus panel. It does not spread across the app.
+**The Shell Rule.** The sidebar remains a distinct neutral surface in light mode and a near-black surface in dark mode.
 
 **The State Rule.** Accent colors belong to actual states. If there is no state, there is no chroma.
 
@@ -183,18 +183,18 @@ This system uses tonal layering first and light shadow second. Surfaces are most
 The component vocabulary is consistent across dashboard, list, detail, and forms. Card shape stays between 12px and 16px, inputs and buttons stay at 12px, and pills are reserved for badges and status chips.
 
 ### Buttons
-- Primary buttons are filled emerald controls with bold white text and a 12px radius.
+- Primary buttons are filled near-black controls with light text and a 12px radius.
 - Secondary buttons stay white with a slate border and subdued text.
 - Hover states darken the fill or lift the surface slightly; focus states use a visible emerald outline or ring.
 
 ### Inputs and Selects
 - Fields are white, 12px radius, 1px slate borders, and compact vertical padding.
-- Focus uses an emerald border and soft emerald ring, not a custom glow effect.
+- Focus uses the primary ink border and a soft neutral ring, not a custom glow effect.
 - Error states switch the border and helper text to rose.
 
 ### Cards and Panels
 - Standard cards use white surfaces, subtle borders, and a low base shadow.
-- The sidebar and focus panel are the only intentionally dark surfaces.
+- Dark surfaces are reserved for the dark theme; light-theme panels use the documented gray token scale.
 - Padding is generous enough for scanning, but never so large that the page starts to feel promotional.
 
 ### Navigation
@@ -204,7 +204,7 @@ The component vocabulary is consistent across dashboard, list, detail, and forms
 
 ### Tables
 - Tables are dense but readable: sticky headers are not necessary here, but row separators, truncated titles, monospaced IDs, and tabular numerals make scanning easier.
-- Hover feedback is a faint emerald tint, not a dramatic row takeover.
+- Hover feedback is a faint neutral tint, not a dramatic row takeover.
 
 ### Status Badges
 - Status chips are pill-shaped, low-height, and semantic.
@@ -214,9 +214,9 @@ The component vocabulary is consistent across dashboard, list, detail, and forms
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep the page on a stone or white working surface and reserve `#13231b` for the sidebar and focus panel.
+- **Do** keep the page on the cool-gray or white working surfaces defined in `src/app/globals.css`.
 - **Do** use the same 12px button and input radius everywhere so the app feels like one system.
-- **Do** use emerald, amber, rose, blue, and violet only when they communicate a real state or state-adjacent context.
+- **Do** use green, amber, and red only when they communicate a real state or state-adjacent context.
 - **Do** keep body text dark and high-contrast; helper text may soften, but it must remain readable.
 - **Do** use the same control vocabulary across the dashboard, deal list, detail page, and forms.
 

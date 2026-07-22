@@ -26,19 +26,38 @@ export type DealsResponseDto = {
   data: DealDto[];
   pageInfo: {
     total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
     hasNextPage: boolean;
-    nextCursor: string | null;
   };
 };
 
 export type DealsQuery = {
   filters: DealFilters;
-  cursor?: string;
+  page?: number;
   limit?: number;
 };
 
 export type DealResponseDto = {
   data: DealDto;
+};
+
+export type DealAuditEventDto = {
+  id: string;
+  dealId: string;
+  previousStatus: DealStatus;
+  nextStatus: DealDecision;
+  actorId: string;
+  actorName: string;
+  reason: string | null;
+  requestId: string;
+  createdAt: string;
+};
+
+export type DealDetailResponseDto = DealResponseDto & {
+  history: DealAuditEventDto[];
 };
 
 export type Deal = {
@@ -58,6 +77,7 @@ export type DealDetail = Deal & {
   startsAtLabel: string;
   endsAtLabel: string;
   createdAtLabel: string;
+  updatedAt: string;
 };
 
 export type DealFilters = {
@@ -79,11 +99,11 @@ export type DealDetailPageProps = {
 
 export type DealDetailViewProps = {
   dealId: string;
+  initialData?: DealDetailResponseDto;
 };
 
 export type DealsTableProps = {
   deals: Deal[];
-  totalCount: number;
 };
 
 export type DealsFiltersProps = {
@@ -116,6 +136,7 @@ export type DealApiRouteContext = {
 
 export type DealDetailContentProps = {
   deal: DealDetail;
+  history: DealAuditEventDto[];
 };
 
 export type DealFormValues = {
@@ -149,6 +170,7 @@ export type PartnerOption = {
 
 export type DealEditViewProps = {
   dealId: string;
+  initialDeal?: DealDto;
 };
 
 export type DealEditFormProps = {
@@ -180,7 +202,14 @@ export type DealCreateFormErrors = Partial<
 
 export type DealDecision = "approved" | "rejected";
 
+export type DealDecisionPayload = {
+  expectedUpdatedAt: string;
+  requestId: string;
+  reason?: string;
+};
+
 export type DealStatusActionsProps = {
   dealId: string;
   status: DealStatus;
+  expectedUpdatedAt: string;
 };

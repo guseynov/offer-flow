@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getDealById } from "@/lib/api/deals";
+import { getDealDetail } from "@/lib/api/deals";
 import { isApiNotFound } from "@/lib/api/errors";
 import { mapDealDtoToDetail } from "@/lib/mappers/deal";
 import { dealKeys } from "@/lib/query-keys";
@@ -11,11 +11,14 @@ import { DealDetailError } from "./deal-detail-error";
 import { DealDetailSkeleton } from "./deal-detail-skeleton";
 import { DealNotFound } from "./deal-not-found";
 
-export function DealDetailView({ dealId }: DealDetailViewProps) {
+export function DealDetailView({
+  dealId,
+  initialData,
+}: DealDetailViewProps) {
   const dealQuery = useQuery({
-    queryKey: dealKeys.detail(dealId),
-    queryFn: () => getDealById(dealId),
-    select: mapDealDtoToDetail,
+    queryKey: dealKeys.detailView(dealId),
+    queryFn: () => getDealDetail(dealId),
+    initialData,
   });
 
   if (dealQuery.isPending) {
@@ -30,5 +33,10 @@ export function DealDetailView({ dealId }: DealDetailViewProps) {
     return <DealDetailError onRetry={() => void dealQuery.refetch()} />;
   }
 
-  return <DealDetailContent deal={dealQuery.data} />;
+  return (
+    <DealDetailContent
+      deal={mapDealDtoToDetail(dealQuery.data.data)}
+      history={dealQuery.data.history}
+    />
+  );
 }

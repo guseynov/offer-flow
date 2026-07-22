@@ -12,10 +12,11 @@ import { DealDetailSkeleton } from "../detail/deal-detail-skeleton";
 import { DealNotFound } from "../detail/deal-not-found";
 import { DealEditForm } from "./deal-edit-form";
 
-export function DealEditView({ dealId }: DealEditViewProps) {
+export function DealEditView({ dealId, initialDeal }: DealEditViewProps) {
   const dealQuery = useQuery({
     queryKey: dealKeys.detail(dealId),
     queryFn: () => getDealById(dealId),
+    initialData: initialDeal,
   });
 
   if (dealQuery.isPending) {

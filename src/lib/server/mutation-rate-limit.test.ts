@@ -35,6 +35,7 @@ describe("mutation rate limiting", () => {
     expect(response).toBeNull();
     expect(consumeMutationRateLimit).toHaveBeenCalledWith(
       expect.objectContaining({
+        scopePrefix: "mutation",
         clientKey: expect.stringMatching(/^[a-f0-9]{64}$/),
         clientLimit: 60,
         globalLimit: 600,

@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { setDealDecision } from "@/lib/api/deals";
 import { dealKeys } from "@/lib/query-keys";
+import { isApiConflict } from "@/lib/api/errors";
 import type {
   DealDecision,
   DealStatus,
@@ -50,15 +51,28 @@ function getActionLabel(action: DealDecision, pendingDecision: DealDecision | un
   return "Reject";
 }
 
-export function DealStatusActions({ dealId, status }: DealStatusActionsProps) {
+export function DealStatusActions({
+  dealId,
+  status,
+  expectedUpdatedAt,
+}: DealStatusActionsProps) {
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (decision: DealDecision) => setDealDecision(dealId, decision),
+    mutationFn: (decision: DealDecision) =>
+      setDealDecision(dealId, decision, {
+        expectedUpdatedAt,
+        requestId: crypto.randomUUID(),
+      }),
     onSuccess: (updatedDeal) => {
       queryClient.setQueryData(dealKeys.detail(dealId), updatedDeal);
-      void queryClient.invalidateQueries({ queryKey: dealKeys.detail(dealId) });
+      void queryClient.invalidateQueries({ queryKey: dealKeys.detailView(dealId) });
       void queryClient.invalidateQueries({ queryKey: dealKeys.all });
       void queryClient.invalidateQueries({ queryKey: dealKeys.dashboard });
+    },
+    onError: (error) => {
+      if (isApiConflict(error)) {
+        void queryClient.invalidateQueries({ queryKey: dealKeys.detailView(dealId) });
+      }
     },
   });
 
@@ -107,7 +121,9 @@ export function DealStatusActions({ dealId, status }: DealStatusActionsProps) {
 
       {mutation.isError && (
         <p role="alert" className="mt-3 text-xs font-semibold text-danger">
-          The status could not be updated. Try again.
+          {isApiConflict(mutation.error)
+            ? "This offer changed before your decision was saved. The latest record is loading."
+            : "The status could not be updated. Try again."}
         </p>
       )}
     </div>

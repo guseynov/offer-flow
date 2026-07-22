@@ -54,5 +54,18 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://offer_flow:offer_flow@127.0.0.1:5432/offer_flow_test
 
+      - name: Verify production database readiness
+        run: |
+          npm run db:migrate
+          npm run check:production
+        env:
+          DATABASE_URL: postgresql://offer_flow:offer_flow@127.0.0.1:5432/offer_flow_test
+
       - name: Build
         run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser workflows
+        run: npm run test:e2e

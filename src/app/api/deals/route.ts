@@ -33,20 +33,19 @@ export async function GET(request: Request) {
       status: queryResult.data.status,
       category: queryResult.data.category,
     },
-    cursor: queryResult.data.cursor,
+    page: queryResult.data.page,
     limit: queryResult.data.limit,
   });
-
-  if (!page) {
-    return NextResponse.json({ message: "Invalid cursor" }, { status: 400 });
-  }
 
   const response: DealsResponseDto = {
     data: page.deals,
     pageInfo: {
       total: page.total,
+      page: page.page,
+      pageSize: page.pageSize,
+      totalPages: page.totalPages,
+      hasPreviousPage: page.hasPreviousPage,
       hasNextPage: page.hasNextPage,
-      nextCursor: page.nextCursor,
     },
   };
 

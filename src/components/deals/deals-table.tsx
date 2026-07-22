@@ -47,15 +47,7 @@ const bodyCellVariants = cva("px-5", {
   },
 });
 
-function getOfferCountLabel(count: number) {
-  if (count === 1) {
-    return "offer";
-  }
-
-  return "offers";
-}
-
-export function DealsTable({ deals, totalCount }: DealsTableProps) {
+export function DealsTable({ deals }: DealsTableProps) {
   const tableDensity = useDashboardUiStore((state) => state.tableDensity);
 
   return (
@@ -158,9 +150,6 @@ export function DealsTable({ deals, totalCount }: DealsTableProps) {
             ))}
           </TableBody>
         </Table>
-      </div>
-      <div className="border-t border-(--surface-overlay-strong) bg-(--surface-overlay) px-6 py-3 text-xs font-medium text-(--text-faint)">
-        Loaded {deals.length} of {totalCount} {getOfferCountLabel(totalCount)}
       </div>
     </div>
   );

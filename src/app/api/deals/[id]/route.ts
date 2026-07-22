@@ -5,11 +5,16 @@ import {
 } from "@/lib/api/parse-json-request";
 import {
   getDealById,
+  getDealHistory,
   updateDeal,
 } from "@/lib/server/deal-repository";
 import { updateDealPayloadSchema } from "@/lib/schemas/deal";
 import { getMutationRateLimitResponse } from "@/lib/server/mutation-rate-limit";
-import type { DealApiRouteContext, DealResponseDto } from "@/types/deal";
+import type {
+  DealApiRouteContext,
+  DealDetailResponseDto,
+  DealResponseDto,
+} from "@/types/deal";
 
 export async function GET(_request: Request, context: DealApiRouteContext) {
   const { id } = await context.params;
@@ -19,7 +24,10 @@ export async function GET(_request: Request, context: DealApiRouteContext) {
     return NextResponse.json({ message: "Deal not found" }, { status: 404 });
   }
 
-  const response: DealResponseDto = { data: deal };
+  const response: DealDetailResponseDto = {
+    data: deal,
+    history: await getDealHistory(id),
+  };
 
   return NextResponse.json(response);
 }

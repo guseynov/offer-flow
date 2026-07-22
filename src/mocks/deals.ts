@@ -1,6 +1,44 @@
 import type { DealDto } from "@/types/deal";
 
-export const mockDeals: DealDto[] = [
+const generatedOfferTitles = [
+  "Market Morning Bundle",
+  "Restorative Class Pack",
+  "Chef's Weeknight Special",
+  "Small Space Upgrade",
+  "Family Discovery Pass",
+  "Seasonal Service Package",
+  "Weekend Workshop",
+  "Local Favorites Box",
+  "Wellness Starter Session",
+  "Home Essentials Edit",
+  "Neighborhood Experience",
+] as const;
+
+const generatedOfferPartners = [
+  {
+    id: "partner-001",
+    name: "Northstar Roasters",
+    category: "food-drink",
+  },
+  { id: "partner-002", name: "Form & Flow", category: "wellness" },
+  { id: "partner-003", name: "Table Eleven", category: "food-drink" },
+  { id: "partner-004", name: "Common Goods", category: "home" },
+  {
+    id: "partner-005",
+    name: "City Discovery Museum",
+    category: "experiences",
+  },
+  { id: "partner-006", name: "Harbor Cycle Works", category: "services" },
+] as const;
+
+const generatedOfferStatuses: DealDto["status"][] = [
+  "draft",
+  "pending",
+  "approved",
+  "rejected",
+];
+
+const featuredDeals: DealDto[] = [
   {
     id: "deal-001",
     title: "Weekend Coffee Bundle",
@@ -84,5 +122,33 @@ export const mockDeals: DealDto[] = [
     endsAt: "2026-07-31T18:00:00.000Z",
     createdAt: "2026-06-14T08:50:00.000Z",
     updatedAt: "2026-06-14T08:50:00.000Z"
-  }
+  },
 ];
+
+const generatedDeals: DealDto[] = Array.from({ length: 44 }, (_, index) => {
+  const sequence = index + 7;
+  const partner = generatedOfferPartners[index % generatedOfferPartners.length];
+  const title = generatedOfferTitles[index % generatedOfferTitles.length];
+  const startsAt = new Date(Date.UTC(2026, 6, 1 + index, 9));
+  const endsAt = new Date(startsAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const createdAt = new Date(Date.UTC(2026, 5, 16, index));
+  const updatedAt = new Date(createdAt.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+  return {
+    id: `deal-${String(sequence).padStart(3, "0")}`,
+    title: `${title} ${String(sequence).padStart(3, "0")}`,
+    description:
+      "A limited community offer for local members, with simple booking and clear redemption details.",
+    category: partner.category,
+    priceCents: 2500 + index * 175,
+    status: generatedOfferStatuses[index % generatedOfferStatuses.length],
+    partnerId: partner.id,
+    partnerName: partner.name,
+    startsAt: startsAt.toISOString(),
+    endsAt: endsAt.toISOString(),
+    createdAt: createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
+  };
+});
+
+export const mockDeals: DealDto[] = [...featuredDeals, ...generatedDeals];

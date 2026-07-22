@@ -1,25 +1,9 @@
-"use client";
-
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import type { CSSProperties } from "react";
 import type { DashboardStatusPoint } from "@/lib/dashboard-data";
 import type { DealStatus } from "@/types/deal";
 
 type OverviewChartProps = {
   series: DashboardStatusPoint[];
-};
-
-type OverviewChartTooltipProps = {
-  active?: boolean;
-  payload?: Array<{ payload: DashboardStatusPoint }>;
 };
 
 const statusColors: Record<DealStatus, string> = {
@@ -29,77 +13,43 @@ const statusColors: Record<DealStatus, string> = {
   rejected: "var(--danger)",
 };
 
-function OverviewChartTooltip({ active, payload }: OverviewChartTooltipProps) {
-  const point = payload?.[0]?.payload;
-
-  if (!active || !point) {
-    return null;
-  }
-
-  return (
-    <div className="rounded-lg border border-(--surface-overlay-strong) bg-(--surface-popover) px-3 py-2 text-sm shadow-(--shadow-sm)">
-      <p className="font-semibold text-(--text-strong)">{point.label}</p>
-      <p className="mt-1 text-(--text-muted)">
-        {point.count} {point.count === 1 ? "offer" : "offers"}
-      </p>
-    </div>
-  );
-}
-
 export function OverviewChart({ series }: OverviewChartProps) {
-  const accessibleSummary = series
-    .map((point) => `${point.label}: ${point.count}`)
-    .join(", ");
+  const maximum = Math.max(1, ...series.map((point) => point.count));
 
   return (
     <figure>
-      <div
-        role="img"
-        aria-label={`Current offer status distribution. ${accessibleSummary}.`}
-        className="h-64 w-full"
+      <ul
+        aria-label="Current offer status distribution"
+        className="grid h-64 grid-cols-4 items-end gap-3 border-b border-(--surface-overlay-strong) px-2 pt-7 sm:gap-6"
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={series}
-            margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
-          >
-            <CartesianGrid
-              vertical={false}
-              stroke="var(--surface-overlay-strong)"
-              strokeDasharray="3 7"
-            />
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              tickMargin={12}
-              tick={{ fill: "var(--text-muted)", fontSize: 12 }}
-            />
-            <YAxis
-              allowDecimals={false}
-              axisLine={false}
-              tickLine={false}
-              tickMargin={10}
-              width={28}
-              tick={{ fill: "var(--text-muted)", fontSize: 12 }}
-            />
-            <Tooltip
-              cursor={{ fill: "var(--surface-overlay)" }}
-              content={<OverviewChartTooltip />}
-              wrapperStyle={{ outline: "none" }}
-            />
-            <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={64}>
-              {series.map((point) => (
-                <Cell
-                  key={point.status}
-                  fill={statusColors[point.status]}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <figcaption className="sr-only">{accessibleSummary}</figcaption>
+        {series.map((point) => {
+          const height = Math.max(4, (point.count / maximum) * 100);
+          const style = {
+            "--bar-height": `${height}%`,
+            "--bar-color": statusColors[point.status],
+          } as CSSProperties;
+
+          return (
+            <li key={point.status} className="flex h-full min-w-0 flex-col justify-end text-center">
+              <span className="mb-2 text-sm font-bold tabular-nums text-(--text-strong)">
+                {point.count}
+                <span className="sr-only"> offers</span>
+              </span>
+              <span
+                aria-hidden="true"
+                style={style}
+                className="mx-auto h-(--bar-height) w-full max-w-16 rounded-t-md bg-(--bar-color) motion-safe:transition-[height]"
+              />
+              <span className="mt-3 truncate text-xs text-(--text-muted)">
+                {point.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <figcaption className="sr-only">
+        {series.map((point) => `${point.label}: ${point.count}`).join(", ")}
+      </figcaption>
     </figure>
   );
 }

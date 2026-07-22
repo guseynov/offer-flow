@@ -19,6 +19,7 @@ import { getDashboardData } from "@/lib/api/dashboard";
 import { mapDealDtosToDeals } from "@/lib/mappers/deal";
 import { dealKeys } from "@/lib/query-keys";
 import { OverviewChart } from "./overview-chart";
+import type { DashboardDataDto } from "@/lib/dashboard-data";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -42,10 +43,11 @@ function DashboardOverviewSkeleton() {
   );
 }
 
-export function DashboardOverview() {
+export function DashboardOverview({ initialData }: { initialData?: DashboardDataDto }) {
   const dealsQuery = useQuery({
     queryKey: dealKeys.dashboard,
     queryFn: getDashboardData,
+    initialData,
   });
 
   if (dealsQuery.isPending) {

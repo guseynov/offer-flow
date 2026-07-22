@@ -5,7 +5,6 @@ import clsx from "clsx";
 import { LayoutGrid, Plus, SquareStack, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { SidebarNavItem } from "@/types/dashboard";
@@ -82,7 +81,7 @@ function NavSection({
   pathname: string;
 }) {
   return (
-    <div className="space-y-2">
+    <nav aria-label="Primary" className="space-y-2">
       <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-faint)">
         {title}
       </p>
@@ -115,7 +114,7 @@ function NavSection({
           );
         })}
       </ul>
-    </div>
+    </nav>
   );
 }
 
@@ -124,6 +123,7 @@ export function Sidebar() {
 
   return (
     <aside
+      aria-label="Operator workspace"
       className={clsx(
         "relative border-b border-sidebar-border bg-sidebar text-foreground",
         "lg:sticky lg:top-0 lg:h-screen lg:w-46 lg:border-r lg:border-b-0",
@@ -142,7 +142,7 @@ export function Sidebar() {
           variant="outline"
           className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase"
         >
-          ops
+          public
         </Badge>
       </div>
 
@@ -158,19 +158,12 @@ export function Sidebar() {
       </div>
 
       <div className="hidden border-t border-sidebar-border px-3 py-4 lg:absolute lg:inset-x-0 lg:bottom-0 lg:block">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="size-7">
-            <AvatarFallback>AM</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-(--text-strong)">
-              alex.morgan
-            </p>
-            <p className="truncate text-[10px] text-(--text-faint)">
-              admin · ops
-            </p>
-          </div>
-        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--text-soft)">
+          public demo
+        </p>
+        <p className="mt-1 text-[10px] text-(--text-faint)">
+          Changes are shared with everyone.
+        </p>
       </div>
     </aside>
   );

@@ -55,7 +55,7 @@ function createPatchRequest(payload: unknown) {
 describe("guarded deal updates", () => {
   it("updates metadata without changing workflow status", async () => {
     const deal = await createPendingDeal();
-    const response = await updateDeal(createPatchRequest(createUpdatePayload(deal)), {
+    const response = await updateDeal(await createPatchRequest(createUpdatePayload(deal)), {
       params: Promise.resolve({ id: deal.id }),
     });
     const body = (await response.json()) as { data: DealDto };
@@ -69,7 +69,7 @@ describe("guarded deal updates", () => {
   it("rejects attempts to bypass the decision endpoints with PATCH", async () => {
     const deal = await createPendingDeal();
     const response = await updateDeal(
-      createPatchRequest({
+      await createPatchRequest({
         ...createUpdatePayload(deal),
         status: "approved",
       }),
@@ -89,13 +89,20 @@ describe("guarded deal updates", () => {
   it("returns 409 instead of overwriting a newer review decision", async () => {
     const staleDeal = await createPendingDeal();
 
-    const decisionResponse = await approveDeal(new Request("http://localhost"), {
+    const decisionResponse = await approveDeal(new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expectedUpdatedAt: staleDeal.updatedAt,
+        requestId: crypto.randomUUID(),
+      }),
+    }), {
       params: Promise.resolve({ id: staleDeal.id }),
     });
     expect(decisionResponse.status).toBe(200);
 
     const response = await updateDeal(
-      createPatchRequest(createUpdatePayload(staleDeal)),
+      await createPatchRequest(createUpdatePayload(staleDeal)),
       { params: Promise.resolve({ id: staleDeal.id }) },
     );
     const body = (await response.json()) as {

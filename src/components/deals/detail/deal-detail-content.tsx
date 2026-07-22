@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import type { DealDetailContentProps } from "@/types/deal";
 import { DealStatusActions } from "./deal-status-actions";
 
-export function DealDetailContent({ deal }: DealDetailContentProps) {
+export function DealDetailContent({
+  deal,
+  history,
+}: DealDetailContentProps) {
   return (
     <div className="mx-auto max-w-380">
       <Button
@@ -102,7 +105,29 @@ export function DealDetailContent({ deal }: DealDetailContentProps) {
               <h2 className="text-xl font-bold tracking-[-0.02em] text-(--text-strong)">
                 Record history
               </h2>
-              <dl className="mt-5 space-y-5">
+              <ol className="mt-5 space-y-4">
+                {history.map((event) => (
+                  <li key={event.id} className="surface-panel-soft rounded-[1rem] px-4 py-4">
+                    <p className="text-sm font-semibold text-(--text-strong)">
+                      {event.previousStatus} → {event.nextStatus}
+                    </p>
+                    <p className="mt-1 text-xs text-(--text-muted)">
+                      {event.actorName} · {new Intl.DateTimeFormat("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                        timeZone: "UTC",
+                      }).format(new Date(event.createdAt))} UTC
+                    </p>
+                    {event.reason ? (
+                      <p className="mt-2 text-sm text-(--text-soft)">{event.reason}</p>
+                    ) : null}
+                  </li>
+                ))}
+                {history.length === 0 ? (
+                  <li className="text-sm text-(--text-muted)">No review decisions recorded yet.</li>
+                ) : null}
+              </ol>
+              <dl className="mt-5 space-y-5 border-t border-white/6 pt-5">
                 <div className="surface-panel-soft rounded-[1rem] px-4 py-4">
                   <dt className="ui-label">Created</dt>
                   <dd className="mt-3 text-sm font-semibold text-(--text-strong)">
@@ -120,11 +145,15 @@ export function DealDetailContent({ deal }: DealDetailContentProps) {
           </section>
         </div>
 
-        <aside className="surface-panel rounded-[0.9rem] p-6 xl:sticky xl:top-6 xl:self-start">
+        <aside aria-label="Review controls and record snapshot" className="surface-panel rounded-[0.9rem] p-6 xl:sticky xl:top-6 xl:self-start">
           <p className="ui-label">Review decision</p>
 
           <div className="mt-6">
-            <DealStatusActions dealId={deal.id} status={deal.status} />
+            <DealStatusActions
+              dealId={deal.id}
+              status={deal.status}
+              expectedUpdatedAt={deal.updatedAt}
+            />
           </div>
 
           <div className="mt-8 border-t border-white/6 pt-6">

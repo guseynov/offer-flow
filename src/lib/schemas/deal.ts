@@ -39,8 +39,11 @@ export const dealsResponseSchema = z.object({
   data: z.array(dealDtoSchema),
   pageInfo: z.object({
     total: z.number().int().nonnegative(),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
+    totalPages: z.number().int().positive(),
+    hasPreviousPage: z.boolean(),
     hasNextPage: z.boolean(),
-    nextCursor: z.string().nullable(),
   }),
 });
 
@@ -48,13 +51,37 @@ export const dealsQuerySchema = z.object({
   q: z.string().trim().max(MAX_DEAL_TITLE_LENGTH).default(""),
   status: dealStatusSchema.optional(),
   category: dealDtoSchema.shape.category.optional(),
-  cursor: z.string().max(200).optional(),
+  page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const dealResponseSchema = z.object({
   data: dealDtoSchema,
 });
+
+export const dealAuditEventSchema = z.object({
+  id: z.string(),
+  dealId: z.string(),
+  previousStatus: dealStatusSchema,
+  nextStatus: z.enum(["approved", "rejected"]),
+  actorId: z.string(),
+  actorName: z.string(),
+  reason: z.string().nullable(),
+  requestId: z.string(),
+  createdAt: z.iso.datetime(),
+});
+
+export const dealDetailResponseSchema = dealResponseSchema.extend({
+  history: z.array(dealAuditEventSchema),
+});
+
+export const dealDecisionPayloadSchema = z
+  .object({
+    expectedUpdatedAt: z.iso.datetime(),
+    requestId: z.uuid(),
+    reason: z.string().trim().min(1).max(500).optional(),
+  })
+  .strict();
 
 export const dealFormSchema = z
   .object({

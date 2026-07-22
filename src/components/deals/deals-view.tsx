@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { getDeals } from "@/lib/api/deals";
 import {
   hasActiveDealFilters,
@@ -11,23 +10,41 @@ import {
 } from "@/lib/deal-filters";
 import { mapDealDtosToDeals } from "@/lib/mappers/deal";
 import { dealKeys } from "@/lib/query-keys";
-import type { DealFilterKey } from "@/types/deal";
+import type { DealFilterKey, DealFilters, DealsResponseDto } from "@/types/deal";
 import { DealsDensityControl } from "./deals-density-control";
 import { DealsEmptyState } from "./deals-empty-state";
 import { DealsErrorState } from "./deals-error-state";
 import { DealsFilters } from "./deals-filters";
+import { DealsPagination } from "./deals-pagination";
 import { DealsTable } from "./deals-table";
 import { DealsTableSkeleton } from "./deals-table-skeleton";
 
 const filterKeys: DealFilterKey[] = ["q", "status", "category"];
 
-export function DealsView() {
+function parsePage(searchParams: URLSearchParams) {
+  const page = Number(searchParams.get("page") ?? "1");
+
+  if (Number.isInteger(page) && page >= 1 && page <= 1000) {
+    return page;
+  }
+
+  return 1;
+}
+
+export function DealsView({
+  initialPage,
+  initialFilters,
+}: {
+  initialPage?: DealsResponseDto;
+  initialFilters?: DealFilters;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // Filters live in the URL so views are shareable and browser navigation restores them.
   const filters = parseDealFilters(new URLSearchParams(searchParams.toString()));
+  const page = parsePage(new URLSearchParams(searchParams.toString()));
   const [debouncedQuery, setDebouncedQuery] = useState(filters.query);
 
   useEffect(() => {
@@ -39,12 +56,16 @@ export function DealsView() {
   }, [filters.query]);
 
   const queryFilters = { ...filters, query: debouncedQuery };
-  const dealsQuery = useInfiniteQuery({
-    queryKey: dealKeys.list(queryFilters),
-    queryFn: ({ pageParam }) =>
-      getDeals({ filters: queryFilters, cursor: pageParam, limit: 20 }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.pageInfo.nextCursor ?? undefined,
+  const initialDataMatchesQuery =
+    initialFilters?.query === queryFilters.query &&
+    initialFilters.status === queryFilters.status &&
+    initialFilters.category === queryFilters.category &&
+    initialPage?.pageInfo.page === page;
+  const dealsQuery = useQuery({
+    queryKey: dealKeys.list(queryFilters, page),
+    queryFn: () => getDeals({ filters: queryFilters, page, limit: 20 }),
+    placeholderData: keepPreviousData,
+    initialData: initialPage && initialDataMatchesQuery ? initialPage : undefined,
   });
 
   function updateUrl(
@@ -71,28 +92,32 @@ export function DealsView() {
       nextParams.delete(key);
     }
 
+    nextParams.delete("page");
+
     updateUrl(nextParams, key === "q" ? "replace" : "push");
   }
 
   function clearFilters() {
     const nextParams = new URLSearchParams(searchParams.toString());
 
-    filterKeys.forEach((key) => nextParams.delete(key));
+    [...filterKeys, "page"].forEach((key) => nextParams.delete(key));
     updateUrl(nextParams);
   }
 
-  if (dealsQuery.isPending) {
-    return <DealsTableSkeleton />;
+  function changePage(nextPage: number) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    if (nextPage === 1) {
+      nextParams.delete("page");
+    } else {
+      nextParams.set("page", String(nextPage));
+    }
+
+    updateUrl(nextParams);
   }
 
-  if (dealsQuery.isError) {
-    return <DealsErrorState onRetry={() => void dealsQuery.refetch()} />;
-  }
-
-  const visibleDeals = mapDealDtosToDeals(
-    dealsQuery.data.pages.flatMap((page) => page.data),
-  );
-  const totalCount = dealsQuery.data.pages[0]?.pageInfo.total ?? 0;
+  const visibleDeals = mapDealDtosToDeals(dealsQuery.data?.data ?? []);
+  const pageInfo = dealsQuery.data?.pageInfo;
   const hasActiveFilters = hasActiveDealFilters(filters);
 
   return (
@@ -103,29 +128,26 @@ export function DealsView() {
         onClear={clearFilters}
       />
       <DealsDensityControl />
-      {visibleDeals.length === 0 && (
+      {dealsQuery.isPending ? <DealsTableSkeleton /> : null}
+      {dealsQuery.isError ? (
+        <DealsErrorState onRetry={() => void dealsQuery.refetch()} />
+      ) : null}
+      {!dealsQuery.isPending && !dealsQuery.isError && visibleDeals.length === 0 && (
         <DealsEmptyState
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearFilters}
         />
       )}
-      {visibleDeals.length > 0 && (
+      {!dealsQuery.isError && pageInfo && visibleDeals.length > 0 && (
         <>
-          <DealsTable deals={visibleDeals} totalCount={totalCount} />
-          {dealsQuery.hasNextPage ? (
-            <div className="mt-4 flex justify-center">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={dealsQuery.isFetchingNextPage}
-                onClick={() => void dealsQuery.fetchNextPage()}
-              >
-                {dealsQuery.isFetchingNextPage
-                  ? "Loading more…"
-                  : "Load more offers"}
-              </Button>
-            </div>
-          ) : null}
+          <div aria-busy={dealsQuery.isFetching}>
+            <DealsTable deals={visibleDeals} />
+          </div>
+          <DealsPagination
+            pageInfo={pageInfo}
+            disabled={dealsQuery.isFetching}
+            onPageChange={changePage}
+          />
         </>
       )}
     </>

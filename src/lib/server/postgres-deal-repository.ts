@@ -6,8 +6,8 @@ import type {
   DealsPageInput,
 } from "@/lib/server/deal-repository-types";
 import type {
+  DealAuditEventDto,
   CreateDealPayload,
-  DealDecision,
   DealDto,
   UpdateDealPayload,
 } from "@/types/deal";
@@ -42,6 +42,18 @@ type RateLimitRow = {
   retry_after_seconds: number;
 };
 
+type AuditEventRow = {
+  id: string;
+  deal_id: string;
+  previous_status: DealDto["status"];
+  next_status: "approved" | "rejected";
+  actor_id: string;
+  actor_name: string;
+  reason: string | null;
+  request_id: string;
+  created_at: Date | string;
+};
+
 function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
@@ -60,6 +72,20 @@ function mapDealRow(row: DealRow): DealDto {
     endsAt: toIsoString(row.ends_at),
     createdAt: toIsoString(row.created_at),
     updatedAt: toIsoString(row.updated_at),
+  };
+}
+
+function mapAuditEventRow(row: AuditEventRow): DealAuditEventDto {
+  return {
+    id: row.id,
+    dealId: row.deal_id,
+    previousStatus: row.previous_status,
+    nextStatus: row.next_status,
+    actorId: row.actor_id,
+    actorName: row.actor_name,
+    reason: row.reason,
+    requestId: row.request_id,
+    createdAt: toIsoString(row.created_at),
   };
 }
 
@@ -99,27 +125,30 @@ export function createPostgresDealRepository(
       await sql.end();
     },
 
-    async getDealsPage({ filters, cursor, limit }: DealsPageInput) {
-      let cursorUpdatedAt: string | null = null;
+    async checkReadiness() {
+      const rows = await sql<Array<{
+        has_deals: boolean;
+        has_audit: boolean;
+        version: number | string;
+      }>>`
+        SELECT
+          to_regclass('public.deals') IS NOT NULL AS has_deals,
+          to_regclass('public.deal_audit_events') IS NOT NULL AS has_audit,
+          COALESCE((SELECT MAX(version) FROM schema_migrations), 0) AS version
+      `;
+      const readiness = rows[0];
+      return Boolean(
+        readiness?.has_deals &&
+          readiness.has_audit &&
+          Number(readiness.version) >= 2,
+      );
+    },
 
-      if (cursor) {
-        const cursorRows = await sql<Array<{ updated_at: Date | string }>>`
-          SELECT updated_at
-          FROM deals
-          WHERE id = ${cursor}
-          LIMIT 1
-        `;
-
-        if (!cursorRows[0]) {
-          return undefined;
-        }
-
-        cursorUpdatedAt = toIsoString(cursorRows[0].updated_at);
-      }
-
+    async getDealsPage({ filters, page, limit }: DealsPageInput) {
       const query = filters.query;
       const status = filters.status ?? "";
       const category = filters.category ?? "";
+      const offset = (page - 1) * limit;
       const totalRows = await sql<Array<{ total: number | string }>>`
         SELECT COUNT(*) AS total
         FROM deals
@@ -135,24 +164,21 @@ export function createPostgresDealRepository(
         WHERE POSITION(LOWER(${query}) IN LOWER(title || ' ' || partner_name)) > 0
           AND (${status} = '' OR status = ${status})
           AND (${category} = '' OR category = ${category})
-          AND (
-            ${cursorUpdatedAt}::timestamptz IS NULL
-            OR (updated_at, id) < (${cursorUpdatedAt}::timestamptz, ${cursor ?? ""})
-          )
         ORDER BY updated_at DESC, id DESC
-        LIMIT ${limit + 1}
+        LIMIT ${limit}
+        OFFSET ${offset}
       `;
-      const hasNextPage = rows.length > limit;
-      const pageRows = hasNextPage ? rows.slice(0, limit) : rows;
-      const nextCursor = hasNextPage
-        ? (pageRows[pageRows.length - 1]?.id ?? null)
-        : null;
+      const total = Number(totalRows[0]?.total ?? 0);
+      const totalPages = Math.max(1, Math.ceil(total / limit));
 
       return {
-        deals: pageRows.map(mapDealRow),
-        total: Number(totalRows[0]?.total ?? 0),
-        hasNextPage,
-        nextCursor,
+        deals: rows.map(mapDealRow),
+        total,
+        page,
+        pageSize: limit,
+        totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages,
       };
     },
 
@@ -167,6 +193,19 @@ export function createPostgresDealRepository(
       `;
 
       return rows[0] ? mapDealRow(rows[0]) : undefined;
+    },
+
+    async getDealHistory(dealId) {
+      const rows = await sql<AuditEventRow[]>`
+        SELECT
+          id, deal_id, previous_status, next_status, actor_id, actor_name,
+          reason, request_id::text, created_at
+        FROM deal_audit_events
+        WHERE deal_id = ${dealId}
+        ORDER BY created_at DESC, id DESC
+      `;
+
+      return rows.map(mapAuditEventRow);
     },
 
     async updateDeal(dealId: string, payload: UpdateDealPayload) {
@@ -245,19 +284,103 @@ export function createPostgresDealRepository(
       return rows[0] ? mapDealRow(rows[0]) : undefined;
     },
 
-    async setDealStatus(dealId: string, status: DealDecision) {
-      const rows = await sql<DealRow[]>`
-        UPDATE deals
-        SET
-          status = ${status},
-          updated_at = GREATEST(NOW(), updated_at + INTERVAL '1 millisecond')
-        WHERE id = ${dealId}
-        RETURNING
-          id, title, description, category, price_cents, status,
-          partner_id, partner_name, starts_at, ends_at, created_at, updated_at
-      `;
+    async setDealStatus(dealId, input) {
+      return sql.begin(async (transaction) => {
+        const existingEvents = await transaction<AuditEventRow[]>`
+          SELECT
+            id, deal_id, previous_status, next_status, actor_id, actor_name,
+            reason, request_id::text, created_at
+          FROM deal_audit_events
+          WHERE request_id = ${input.requestId}::uuid
+          LIMIT 1
+        `;
+        const existingEvent = existingEvents[0];
 
-      return rows[0] ? mapDealRow(rows[0]) : undefined;
+        if (existingEvent && existingEvent.deal_id === dealId) {
+          const currentRows = await transaction<DealRow[]>`
+            SELECT
+              id, title, description, category, price_cents, status,
+              partner_id, partner_name, starts_at, ends_at, created_at, updated_at
+            FROM deals
+            WHERE id = ${dealId}
+            LIMIT 1
+          `;
+
+          if (currentRows[0]) {
+            return {
+              status: "updated",
+              deal: mapDealRow(currentRows[0]),
+              event: mapAuditEventRow(existingEvent),
+            } as const;
+          }
+        }
+
+        const currentRows = await transaction<DealRow[]>`
+          SELECT
+            id, title, description, category, price_cents, status,
+            partner_id, partner_name, starts_at, ends_at, created_at, updated_at
+          FROM deals
+          WHERE id = ${dealId}
+          FOR UPDATE
+        `;
+        const currentRow = currentRows[0];
+
+        if (!currentRow) {
+          return { status: "not_found" } as const;
+        }
+
+        const currentDeal = mapDealRow(currentRow);
+
+        if (
+          existingEvent ||
+          currentDeal.updatedAt !== input.expectedUpdatedAt ||
+          currentDeal.status === input.decision
+        ) {
+          return { status: "conflict", deal: currentDeal } as const;
+        }
+
+        const updatedRows = await transaction<DealRow[]>`
+          UPDATE deals
+          SET
+            status = ${input.decision},
+            updated_at = GREATEST(NOW(), updated_at + INTERVAL '1 millisecond')
+          WHERE id = ${dealId}
+            AND updated_at = ${input.expectedUpdatedAt}
+          RETURNING
+            id, title, description, category, price_cents, status,
+            partner_id, partner_name, starts_at, ends_at, created_at, updated_at
+        `;
+        const updatedRow = updatedRows[0];
+
+        if (!updatedRow) {
+          return { status: "conflict", deal: currentDeal } as const;
+        }
+
+        const eventRows = await transaction<AuditEventRow[]>`
+          INSERT INTO deal_audit_events (
+            id, deal_id, previous_status, next_status, actor_id, actor_name,
+            reason, request_id
+          ) VALUES (
+            ${`event-${crypto.randomUUID()}`}, ${dealId}, ${currentDeal.status},
+            ${input.decision}, ${input.actorId}, ${input.actorName},
+            ${input.reason ?? null}, ${input.requestId}::uuid
+          )
+          RETURNING
+            id, deal_id, previous_status, next_status, actor_id, actor_name,
+            reason, request_id::text, created_at
+        `;
+        const eventRow = eventRows[0];
+
+        if (!eventRow) {
+          throw new Error("Decision audit event was not returned");
+        }
+
+        return {
+          status: "updated",
+          deal: mapDealRow(updatedRow),
+          event: mapAuditEventRow(eventRow),
+        } as const;
+      });
     },
 
     async getDashboardData(): Promise<DashboardDataDto> {
@@ -321,8 +444,8 @@ export function createPostgresDealRepository(
     },
 
     async consumeMutationRateLimit(input) {
-      const globalScope = "global";
-      const clientScope = `client:${input.clientKey}`;
+      const globalScope = `${input.scopePrefix}:global`;
+      const clientScope = `${input.scopePrefix}:client:${input.clientKey}`;
       return sql.begin(async (transaction) => {
         const globalRows = await transaction<RateLimitRow[]>`
           WITH expired AS (

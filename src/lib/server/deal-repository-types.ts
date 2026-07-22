@@ -1,7 +1,9 @@
 import type { DashboardDataDto } from "@/lib/dashboard-data";
 import type {
   CreateDealPayload,
+  DealAuditEventDto,
   DealDecision,
+  DealDecisionPayload,
   DealDto,
   DealFilters,
   UpdateDealPayload,
@@ -12,20 +14,35 @@ export type DealUpdateResult =
   | { status: "conflict"; deal: DealDto }
   | { status: "not_found" };
 
+export type DealDecisionResult =
+  | { status: "updated"; deal: DealDto; event: DealAuditEventDto }
+  | { status: "conflict"; deal: DealDto }
+  | { status: "not_found" };
+
+export type DealDecisionInput = DealDecisionPayload & {
+  decision: DealDecision;
+  actorId: string;
+  actorName: string;
+};
+
 export type DealsPageResult = {
   deals: DealDto[];
   total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
   hasNextPage: boolean;
-  nextCursor: string | null;
 };
 
 export type DealsPageInput = {
   filters: DealFilters;
-  cursor?: string;
+  page: number;
   limit: number;
 };
 
 export type MutationRateLimitInput = {
+  scopePrefix: string;
   clientKey: string;
   clientLimit: number;
   globalLimit: number;
@@ -40,8 +57,9 @@ export type MutationRateLimitResult = {
 };
 
 export interface DealRepository {
-  getDealsPage(input: DealsPageInput): Promise<DealsPageResult | undefined>;
+  getDealsPage(input: DealsPageInput): Promise<DealsPageResult>;
   getDealById(dealId: string): Promise<DealDto | undefined>;
+  getDealHistory(dealId: string): Promise<DealAuditEventDto[]>;
   updateDeal(
     dealId: string,
     payload: UpdateDealPayload,
@@ -49,11 +67,12 @@ export interface DealRepository {
   createDeal(payload: CreateDealPayload): Promise<DealDto | undefined>;
   setDealStatus(
     dealId: string,
-    status: DealDecision,
-  ): Promise<DealDto | undefined>;
+    input: DealDecisionInput,
+  ): Promise<DealDecisionResult>;
   getDashboardData(): Promise<DashboardDataDto>;
   consumeMutationRateLimit(
     input: MutationRateLimitInput,
   ): Promise<MutationRateLimitResult>;
+  checkReadiness(): Promise<boolean>;
   close?(): Promise<void>;
 }

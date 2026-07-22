@@ -2,7 +2,7 @@
 
 ![OfferFlow dashboard preview](docs/screenshots/offerflow-hero.webp)
 
-A focused interview-prep project demonstrating full-stack architecture for an operations dashboard for partner offers. Operators can browse, filter, create, edit, approve, reject, and prepare offers for publishing through a typed API backed by PostgreSQL in production.
+A focused interview-prep project demonstrating full-stack architecture for an operations dashboard for partner offers. Visitors can browse, filter, create, edit, approve, reject, and prepare offers for publishing through a typed API backed by PostgreSQL in production.
 
 The project intentionally stays small. Each feature demonstrates a specific ownership boundary in a modern React and Next.js application rather than simulating a production commerce platform.
 
@@ -31,12 +31,14 @@ https://offer-flow-console.vercel.app/
 - Light and dark theme toggle with system-theme default
 - Offers table with loading, error, and empty states
 - Shareable title/partner, status, and category filters
-- Server-side filtering with cursor pagination and bounded pages
+- Server-side filtering with numbered, bounded pages
 - Comfortable and compact table density
 - Offer detail pages with cached server state
 - Create and edit forms with visible validation
 - Date and time range picker with theme-aware calendar states
 - Explicit approve and reject mutations
+- Public, shared demo data with no login flow
+- Append-only review history attributed to a generic public-demo actor
 - Query cache updates and invalidation after mutations
 - Typed DTO, UI model, form value, and API payload boundaries
 - Guarded edits with optimistic concurrency and explicit conflict recovery
@@ -56,6 +58,7 @@ https://offer-flow-console.vercel.app/
 | `/api/deals/[id]/approve`    | Approve one offer                |
 | `/api/deals/[id]/reject`     | Reject one offer                 |
 | `/api/dashboard`             | Dashboard aggregates and queues |
+| `/api/health/ready`          | Database/migration readiness     |
 
 ## State ownership
 
@@ -63,7 +66,7 @@ State is assigned according to its lifecycle and sharing requirements:
 
 - **Server data: TanStack Query.** Offer lists, detail records, request status, caching, mutations, and invalidation stay in the query layer. API records are never copied into Zustand.
 - **Shared UI state: Zustand.** Table density is client-only presentation state shared by the density control and table. Components subscribe with selectors to avoid receiving unrelated state.
-- **Shareable filters: URL search params.** Search, status, and category filters survive reloads, support browser history, and can be shared as links. The API applies them before returning a bounded cursor page.
+- **Shareable list state: URL search params.** Search, status, category, and page number survive reloads, support browser history, and can be shared as links. The API applies filters before returning a bounded page.
 - **Form state: Formik.** Create and edit values, touched fields, submission state, and field errors belong to each form instance.
 - **Validation: Zod.** API responses, API payloads, and form values are checked at their boundaries.
 - **API boundary: Axios client + Zod + DTO mapping.** Axios performs transport, Zod verifies runtime data, and mappers convert external DTOs into render-ready UI models.
@@ -82,16 +85,15 @@ Mappers in `src/lib/mappers/deal.ts` perform price and date conversions explicit
 
 ## API and data flow
 
-A typical detail request follows this path:
+A typical initial detail request follows this path:
 
-1. A client component calls a typed function in `src/lib/api/deals.ts`.
-2. Axios requests a Next.js Route Handler under `/api/deals`.
-3. The route calls the repository boundary, which uses PostgreSQL in production and can use an in-memory adapter during local development and unit tests.
-4. The client validates the response with Zod.
-5. A mapper converts the DTO into a UI model.
-6. TanStack Query caches the server record using keys such as `['deal', dealId]`.
+1. A Server Component reads through the repository boundary, which uses PostgreSQL in production and an in-memory adapter during local development and unit tests.
+2. The repository returns typed deal data and append-only decision history.
+3. The initial DTO and audit history are rendered without a browser/API waterfall and seed the client query.
+4. Interactive refetches and mutations call public Route Handlers through Axios.
+5. Zod validates API boundaries, mappers produce render-ready models, and TanStack Query maintains subsequent server state.
 
-Mutations enforce a 32 KiB JSON request limit, validate bounded payloads on the server, apply shared per-client and global rate limits, update the durable repository, seed or refresh the detail cache, and invalidate the offers list and dashboard deliberately. Metadata edits include the last-seen update timestamp so newer review decisions cannot be overwritten silently.
+This pet project intentionally has no authentication: reads and mutations are public, and changes are shared across visitors. The offers list uses conventional `page` and `limit` parameters with PostgreSQL `LIMIT`/`OFFSET`; TanStack Query caches each filter/page combination and retains the previous page while the next one loads. Mutations enforce a 32 KiB JSON request limit, validate bounded payloads on the server, and apply shared per-client and global rate limits. Metadata edits and review decisions include the last-seen timestamp. Review decisions also include an idempotency ID and atomically append an audit event under the generic “Public demo user” actor; stale commands return 409 instead of overwriting newer work.
 
 The mutation limiter uses a SHA-256 digest of the first address supplied by `X-Forwarded-For`, falling back to `X-Real-IP`. Production deployments must sit behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their rate-limit identity. A global limit remains in place as a second guard.
 
@@ -145,7 +147,7 @@ npm run dev
 
 Open [http://localhost:3000/dashboard](http://localhost:3000/dashboard).
 
-Without `DATABASE_URL`, development and tests use the non-durable in-memory adapter. To exercise the production data path, copy `.env.example` to `.env.local`, set a PostgreSQL connection string, then run:
+Without `DATABASE_URL`, development and tests use the non-durable in-memory adapter with 50 deterministic demo offers. To exercise the production data path, copy `.env.example` to `.env.local`, set a PostgreSQL connection string, then run:
 
 ```bash
 npm run db:migrate
@@ -153,12 +155,15 @@ npm run db:seed
 npm run dev
 ```
 
-Production intentionally has no in-memory fallback: `DATABASE_URL` and an applied migration are required before starting the app. The committed seed is optional outside development.
+Production intentionally has no in-memory fallback: `DATABASE_URL` and an applied migration are required before starting the app. The committed seed is optional outside development and idempotently inserts the same 50 demo offers.
+
+`npm start` runs `npm run check:production` first, verifying configuration, connectivity, required tables, and migration version. Hosting health checks can use `/api/health/ready`.
 
 Quality checks:
 
 ```bash
 npm run test
+npm run test:e2e
 npm run lint
 npm run typecheck
 npm run build
@@ -168,14 +173,14 @@ The same lint, type-check, test, and production-build gates run in GitHub Action
 
 ## Current limitations
 
-- Authentication and authorization are intentionally out of scope for this public pet project. Anyone who can reach the app can view and mutate offers.
+- All records and mutations are public and shared by design. Do not use this deployment for sensitive or real operational data.
 - Partner choices remain a fixed application-owned catalog rather than a managed database entity.
 - The in-memory repository is for local development and unit tests only; its changes reset when that process restarts.
-- Automated coverage includes filtering and pagination, dashboard-derived data, request limits and throttling, malformed API JSON, guarded updates, durable cross-instance repository behavior, form accessibility semantics, and search navigation behavior.
+- Automated coverage includes decision races and idempotency, audit history, numbered pagination, dashboard-derived data, request limits and throttling, malformed API JSON, guarded updates, durable cross-instance repository behavior, form accessibility semantics, and Chromium workflows.
 - Accessibility is considered in semantic structure and focus states, but it has not undergone a full assistive-technology audit.
 
 This repository is an architecture exercise rather than a production commerce system.
 
 ## Next steps
 
-The next testing milestone should add browser-level coverage around complete create, edit, and decision flows. A future product iteration could add managed partners and an append-only workflow audit log.
+A future product iteration could add managed partners, decision comments in the UI, and broader assistive-technology/browser coverage. Authentication would be required if the project ever stores sensitive data or becomes a real multi-user operations tool.

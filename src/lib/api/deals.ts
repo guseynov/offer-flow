@@ -1,11 +1,14 @@
 import { apiClient } from "./client";
 import {
   dealResponseSchema,
+  dealDetailResponseSchema,
   dealsResponseSchema,
 } from "@/lib/schemas/deal";
 import type {
   CreateDealPayload,
   DealDecision,
+  DealDecisionPayload,
+  DealDetailResponseDto,
   DealDto,
   DealResponseDto,
   DealsResponseDto,
@@ -15,7 +18,7 @@ import type {
 
 export async function getDeals({
   filters,
-  cursor,
+  page = 1,
   limit = 20,
 }: DealsQuery): Promise<DealsResponseDto> {
   const response = await apiClient.get<DealsResponseDto>("/deals", {
@@ -23,7 +26,7 @@ export async function getDeals({
       q: filters.query || undefined,
       status: filters.status,
       category: filters.category,
-      cursor,
+      page,
       limit,
     },
   });
@@ -37,6 +40,13 @@ export async function getDealById(dealId: string): Promise<DealDto> {
   const validatedResponse = dealResponseSchema.parse(response.data);
 
   return validatedResponse.data;
+}
+
+export async function getDealDetail(
+  dealId: string,
+): Promise<DealDetailResponseDto> {
+  const response = await apiClient.get<DealDetailResponseDto>(`/deals/${dealId}`);
+  return dealDetailResponseSchema.parse(response.data);
 }
 
 export async function updateDeal(
@@ -66,6 +76,7 @@ export async function createDeal(
 export async function setDealDecision(
   dealId: string,
   decision: DealDecision,
+  payload: DealDecisionPayload,
 ): Promise<DealDto> {
   let endpoint = `/deals/${dealId}/approve`;
 
@@ -73,7 +84,7 @@ export async function setDealDecision(
     endpoint = `/deals/${dealId}/reject`;
   }
 
-  const response = await apiClient.post<DealResponseDto>(endpoint);
+  const response = await apiClient.post<DealResponseDto>(endpoint, payload);
   const validatedResponse = dealResponseSchema.parse(response.data);
 
   return validatedResponse.data;

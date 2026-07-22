@@ -8,13 +8,15 @@ import {
   getRecentDeals,
 } from "@/lib/dashboard-data";
 import type {
+  DealDecisionInput,
+  DealDecisionResult,
   DealRepository,
   DealsPageResult,
   DealUpdateResult,
 } from "@/lib/server/deal-repository-types";
 import type {
   CreateDealPayload,
-  DealDecision,
+  DealAuditEventDto,
   DealDto,
   UpdateDealPayload,
   DealFilters,
@@ -22,6 +24,7 @@ import type {
 
 type DealStoreGlobal = typeof globalThis & {
   commerceOpsDeals?: DealDto[];
+  commerceOpsDealAuditEvents?: DealAuditEventDto[];
   commerceOpsMutationRateLimits?: Map<
     string,
     { count: number; windowStartedAt: number }
@@ -42,9 +45,21 @@ function getNextUpdatedAt(currentUpdatedAt: string): string {
 function getStore(): DealDto[] {
   if (!dealStoreGlobal.commerceOpsDeals) {
     dealStoreGlobal.commerceOpsDeals = structuredClone(mockDeals);
+  } else {
+    const existingIds = new Set(
+      dealStoreGlobal.commerceOpsDeals.map((deal) => deal.id),
+    );
+    const missingDeals = mockDeals.filter((deal) => !existingIds.has(deal.id));
+
+    dealStoreGlobal.commerceOpsDeals.push(...structuredClone(missingDeals));
   }
 
   return dealStoreGlobal.commerceOpsDeals;
+}
+
+function getAuditStore(): DealAuditEventDto[] {
+  dealStoreGlobal.commerceOpsDealAuditEvents ??= [];
+  return dealStoreGlobal.commerceOpsDealAuditEvents;
 }
 
 function getRateLimitStore() {
@@ -84,13 +99,13 @@ export function getAllDeals(): DealDto[] {
 
 export function getDealsPageFromStore({
   filters,
-  cursor,
+  page,
   limit,
 }: {
   filters: DealFilters;
-  cursor?: string;
+  page: number;
   limit: number;
-}): DealsPageResult | undefined {
+}): DealsPageResult {
   const filteredDeals = filterDeals(getStore(), filters).sort((left, right) => {
     const updatedAtComparison = right.updatedAt.localeCompare(left.updatedAt);
 
@@ -100,29 +115,19 @@ export function getDealsPageFromStore({
 
     return right.id.localeCompare(left.id);
   });
-  let startIndex = 0;
-
-  if (cursor) {
-    const cursorIndex = filteredDeals.findIndex((deal) => deal.id === cursor);
-
-    if (cursorIndex === -1) {
-      return undefined;
-    }
-
-    startIndex = cursorIndex + 1;
-  }
-
+  const startIndex = (page - 1) * limit;
   const pageDeals = filteredDeals.slice(startIndex, startIndex + limit);
-  const hasNextPage = startIndex + pageDeals.length < filteredDeals.length;
-  const nextCursor = hasNextPage
-    ? (pageDeals[pageDeals.length - 1]?.id ?? null)
-    : null;
+  const total = filteredDeals.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return {
     deals: pageDeals.map((deal) => ({ ...deal })),
-    total: filteredDeals.length,
-    hasNextPage,
-    nextCursor,
+    total,
+    page,
+    pageSize: limit,
+    totalPages,
+    hasPreviousPage: page > 1,
+    hasNextPage: page < totalPages,
   };
 }
 
@@ -197,33 +202,72 @@ export function createDealInStore(
 
 export function setDealStatusInStore(
   dealId: string,
-  status: DealDecision,
-): DealDto | undefined {
+  input: DealDecisionInput,
+): DealDecisionResult {
   const store = getStore();
+  const existingEvent = getAuditStore().find(
+    (event) => event.requestId === input.requestId,
+  );
   const dealIndex = store.findIndex((item) => item.id === dealId);
   const currentDeal = store[dealIndex];
 
   if (!currentDeal) {
-    return undefined;
+    return { status: "not_found" };
+  }
+
+  if (existingEvent?.dealId === dealId) {
+    return {
+      status: "updated",
+      deal: { ...currentDeal },
+      event: { ...existingEvent },
+    };
+  }
+
+  if (
+    existingEvent ||
+    currentDeal.updatedAt !== input.expectedUpdatedAt ||
+    currentDeal.status === input.decision
+  ) {
+    return { status: "conflict", deal: { ...currentDeal } };
   }
 
   const updatedDeal: DealDto = {
     ...currentDeal,
-    status,
+    status: input.decision,
     updatedAt: getNextUpdatedAt(currentDeal.updatedAt),
+  };
+  const event: DealAuditEventDto = {
+    id: `event-${crypto.randomUUID()}`,
+    dealId,
+    previousStatus: currentDeal.status,
+    nextStatus: input.decision,
+    actorId: input.actorId,
+    actorName: input.actorName,
+    reason: input.reason ?? null,
+    requestId: input.requestId,
+    createdAt: updatedDeal.updatedAt,
   };
 
   store[dealIndex] = updatedDeal;
+  getAuditStore().unshift(event);
 
-  return { ...updatedDeal };
+  return { status: "updated", deal: { ...updatedDeal }, event: { ...event } };
 }
 
 export const memoryDealRepository: DealRepository = {
+  async checkReadiness() {
+    return true;
+  },
   async getDealsPage(input) {
     return getDealsPageFromStore(input);
   },
   async getDealById(dealId) {
     return getDealByIdFromStore(dealId);
+  },
+  async getDealHistory(dealId) {
+    return getAuditStore()
+      .filter((event) => event.dealId === dealId)
+      .map((event) => ({ ...event }));
   },
   async updateDeal(dealId, payload) {
     return updateDealInStore(dealId, payload);
@@ -231,8 +275,8 @@ export const memoryDealRepository: DealRepository = {
   async createDeal(payload) {
     return createDealInStore(payload);
   },
-  async setDealStatus(dealId, status) {
-    return setDealStatusInStore(dealId, status);
+  async setDealStatus(dealId, input) {
+    return setDealStatusInStore(dealId, input);
   },
   async getDashboardData() {
     const deals = getAllDeals();
@@ -248,7 +292,7 @@ export const memoryDealRepository: DealRepository = {
     const now = Date.now();
     const windowMilliseconds = input.windowSeconds * 1000;
     const globalCounter = consumeRateLimitCounter(
-      "global",
+      `${input.scopePrefix}:global`,
       input.globalLimit,
       windowMilliseconds,
       now,
@@ -264,7 +308,7 @@ export const memoryDealRepository: DealRepository = {
     }
 
     const clientCounter = consumeRateLimitCounter(
-      `client:${input.clientKey}`,
+      `${input.scopePrefix}:client:${input.clientKey}`,
       input.clientLimit,
       windowMilliseconds,
       now,

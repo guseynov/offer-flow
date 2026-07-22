@@ -58,6 +58,7 @@ export function mapDealDtoToDetail(dto: DealDto): DealDetail {
     startsAtLabel: dateTimeFormatter.format(new Date(dto.startsAt)),
     endsAtLabel: dateTimeFormatter.format(new Date(dto.endsAt)),
     createdAtLabel: dateTimeFormatter.format(new Date(dto.createdAt)),
+    updatedAt: dto.updatedAt,
   };
 }
 

@@ -19,7 +19,10 @@ describe("deal filters", () => {
       query: "northstar",
     });
 
-    expect(result.map((deal) => deal.id)).toEqual(["deal-001"]);
+    expect(result.some((deal) => deal.id === "deal-001")).toBe(true);
+    expect(result.every((deal) => deal.partnerName === "Northstar Roasters")).toBe(
+      true,
+    );
   });
 
   it("combines text, status, and category filters", () => {
@@ -29,7 +32,15 @@ describe("deal filters", () => {
       category: "wellness",
     });
 
-    expect(result.map((deal) => deal.id)).toEqual(["deal-002"]);
+    expect(result.some((deal) => deal.id === "deal-002")).toBe(true);
+    expect(
+      result.every(
+        (deal) =>
+          deal.partnerName === "Form & Flow" &&
+          deal.status === "pending" &&
+          deal.category === "wellness",
+      ),
+    ).toBe(true);
   });
 
   it("ignores invalid status and category URL values", () => {

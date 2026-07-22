@@ -21,17 +21,23 @@ describeWithDatabase("PostgreSQL deal repository", () => {
       path.resolve(process.cwd(), "db/migrations/001_create_deals.sql"),
       "utf8",
     );
+    const auditMigration = await readFile(
+      path.resolve(process.cwd(), "db/migrations/002_create_deal_audit_events.sql"),
+      "utf8",
+    );
     const seed = await readFile(
       path.resolve(process.cwd(), "db/seed.sql"),
       "utf8",
     );
 
     await adminSql.unsafe(migration);
+    await adminSql.unsafe(auditMigration);
     await adminSql.unsafe(seed);
   });
 
   afterAll(async () => {
     if (createdIds.length > 0) {
+      await adminSql`DELETE FROM deal_audit_events WHERE deal_id IN ${adminSql(createdIds)}`;
       await adminSql`DELETE FROM deals WHERE id IN ${adminSql(createdIds)}`;
     }
 
@@ -76,9 +82,19 @@ describeWithDatabase("PostgreSQL deal repository", () => {
 
     const approved = await repositoryOne.setDealStatus(
       staleDeal!.id,
-      "approved",
+      {
+        decision: "approved",
+        expectedUpdatedAt: staleDeal!.updatedAt,
+        requestId: crypto.randomUUID(),
+        actorId: "integration-operator",
+        actorName: "Integration Operator",
+      },
     );
-    expect(approved?.status).toBe("approved");
+    expect(approved.status).toBe("updated");
+    expect(approved.status === "updated" && approved.deal.status).toBe("approved");
+    const history = await repositoryTwo.getDealHistory(staleDeal!.id);
+    expect(history).toHaveLength(1);
+    expect(history[0]?.actorId).toBe("integration-operator");
 
     const updateResult = await repositoryTwo.updateDeal(staleDeal!.id, {
       title: "Stale title",
@@ -100,11 +116,70 @@ describeWithDatabase("PostgreSQL deal repository", () => {
   it("paginates and filters in the database", async () => {
     const page = await repositoryTwo.getDealsPage({
       filters: { query: "Northstar" },
+      page: 1,
       limit: 1,
     });
 
-    expect(page?.total).toBe(1);
-    expect(page?.deals[0]?.partnerName).toBe("Northstar Roasters");
+    expect(page.total).toBe(1);
+    expect(page.deals[0]?.partnerName).toBe("Northstar Roasters");
+  });
+
+  it("applies page offsets to a deterministic ordering", async () => {
+    const prefix = `Page offset ${crypto.randomUUID()}`;
+    const created = await Promise.all([
+      repositoryOne.createDeal(createPayload(`${prefix} A`)),
+      repositoryOne.createDeal(createPayload(`${prefix} B`)),
+      repositoryOne.createDeal(createPayload(`${prefix} C`)),
+    ]);
+    const createdDeals = created.filter((deal) => deal !== undefined);
+    createdIds.push(...createdDeals.map((deal) => deal.id));
+
+    const firstPage = await repositoryOne.getDealsPage({
+      filters: { query: prefix },
+      page: 1,
+      limit: 2,
+    });
+
+    const secondPage = await repositoryOne.getDealsPage({
+      filters: { query: prefix },
+      page: 2,
+      limit: 2,
+    });
+    const firstIds = new Set(firstPage.deals.map((deal) => deal.id));
+    expect(firstPage.deals).toHaveLength(2);
+    expect(secondPage.deals).toHaveLength(1);
+    expect(secondPage.deals.every((deal) => !firstIds.has(deal.id))).toBe(true);
+  });
+
+  it("allows only one concurrent review decision and appends one event", async () => {
+    const deal = await repositoryOne.createDeal(
+      createPayload("Concurrent review decision test"),
+    );
+    expect(deal).toBeDefined();
+    createdIds.push(deal!.id);
+
+    const [approveResult, rejectResult] = await Promise.all([
+      repositoryOne.setDealStatus(deal!.id, {
+        decision: "approved",
+        expectedUpdatedAt: deal!.updatedAt,
+        requestId: crypto.randomUUID(),
+        actorId: "operator-one",
+        actorName: "Operator One",
+      }),
+      repositoryTwo.setDealStatus(deal!.id, {
+        decision: "rejected",
+        expectedUpdatedAt: deal!.updatedAt,
+        requestId: crypto.randomUUID(),
+        actorId: "operator-two",
+        actorName: "Operator Two",
+      }),
+    ]);
+
+    expect([approveResult.status, rejectResult.status].sort()).toEqual([
+      "conflict",
+      "updated",
+    ]);
+    expect(await repositoryOne.getDealHistory(deal!.id)).toHaveLength(1);
   });
 
   it("reads dashboard aggregates and queues from one database snapshot", async () => {
@@ -122,6 +197,7 @@ describeWithDatabase("PostgreSQL deal repository", () => {
 
   it("shares mutation limits across repository instances", async () => {
     const input = {
+      scopePrefix: "integration",
       clientKey: `integration-${crypto.randomUUID()}`,
       clientLimit: 2,
       globalLimit: 1000,
