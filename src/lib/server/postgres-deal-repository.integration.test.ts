@@ -182,6 +182,50 @@ describeWithDatabase("PostgreSQL deal repository", () => {
     expect(await repositoryOne.getDealHistory(deal!.id)).toHaveLength(1);
   });
 
+  it("allows a decision to be reversed when PostgreSQL stores microseconds", async () => {
+    const created = await repositoryOne.createDeal(
+      createPayload("Sequential review decision test"),
+    );
+    expect(created).toBeDefined();
+    createdIds.push(created!.id);
+
+    await adminSql`
+      UPDATE deals
+      SET updated_at =
+        date_trunc('milliseconds', updated_at) + INTERVAL '500 microseconds'
+      WHERE id = ${created!.id}
+    `;
+    const deal = await repositoryOne.getDealById(created!.id);
+    expect(deal).toBeDefined();
+
+    const approved = await repositoryOne.setDealStatus(deal!.id, {
+      decision: "approved",
+      expectedUpdatedAt: deal!.updatedAt,
+      requestId: crypto.randomUUID(),
+      actorId: "integration-operator",
+      actorName: "Integration Operator",
+    });
+    expect(approved.status).toBe("updated");
+
+    if (approved.status !== "updated") {
+      throw new Error("Expected the approval to be saved");
+    }
+
+    const rejected = await repositoryTwo.setDealStatus(deal!.id, {
+      decision: "rejected",
+      expectedUpdatedAt: approved.deal.updatedAt,
+      requestId: crypto.randomUUID(),
+      actorId: "integration-operator",
+      actorName: "Integration Operator",
+    });
+
+    expect(rejected.status).toBe("updated");
+    expect(rejected.status === "updated" && rejected.deal.status).toBe(
+      "rejected",
+    );
+    expect(await repositoryOne.getDealHistory(deal!.id)).toHaveLength(2);
+  });
+
   it("reads dashboard aggregates and queues from one database snapshot", async () => {
     const dashboard = await repositoryOne.getDashboardData();
     const statusTotal = dashboard.statusSeries.reduce(

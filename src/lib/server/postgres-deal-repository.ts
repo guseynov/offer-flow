@@ -227,9 +227,13 @@ export function createPostgresDealRepository(
             partner_name = ${partner.name},
             starts_at = ${payload.startsAt},
             ends_at = ${payload.endsAt},
-            updated_at = GREATEST(NOW(), updated_at + INTERVAL '1 millisecond')
+            updated_at = date_trunc(
+              'milliseconds',
+              GREATEST(NOW(), updated_at + INTERVAL '1 millisecond')
+            )
           WHERE id = ${dealId}
-            AND updated_at = ${payload.expectedUpdatedAt}
+            AND date_trunc('milliseconds', updated_at) =
+              ${payload.expectedUpdatedAt}::timestamptz
           RETURNING
             id, title, description, category, price_cents, status,
             partner_id, partner_name, starts_at, ends_at, created_at, updated_at
@@ -343,9 +347,13 @@ export function createPostgresDealRepository(
           UPDATE deals
           SET
             status = ${input.decision},
-            updated_at = GREATEST(NOW(), updated_at + INTERVAL '1 millisecond')
+            updated_at = date_trunc(
+              'milliseconds',
+              GREATEST(NOW(), updated_at + INTERVAL '1 millisecond')
+            )
           WHERE id = ${dealId}
-            AND updated_at = ${input.expectedUpdatedAt}
+            AND date_trunc('milliseconds', updated_at) =
+              ${input.expectedUpdatedAt}::timestamptz
           RETURNING
             id, title, description, category, price_cents, status,
             partner_id, partner_name, starts_at, ends_at, created_at, updated_at
