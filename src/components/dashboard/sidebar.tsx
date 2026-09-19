@@ -82,9 +82,6 @@ function NavSection({
 }) {
   return (
     <nav aria-label="Primary" className="space-y-2">
-      <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-faint)">
-        {title}
-      </p>
       <ul className="space-y-1">
         {items.map((item) => {
           const isActive = isNavItemActive(pathname, item);
@@ -138,12 +135,6 @@ export function Sidebar() {
             offerflow
           </span>
         </Link>
-        <Badge
-          variant="outline"
-          className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase"
-        >
-          public
-        </Badge>
       </div>
 
       <div className="space-y-4 px-2 py-4">
@@ -155,15 +146,6 @@ export function Sidebar() {
         <div className="px-1">
           <ThemeToggle />
         </div>
-      </div>
-
-      <div className="hidden border-t border-sidebar-border px-3 py-4 lg:absolute lg:inset-x-0 lg:bottom-0 lg:block">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--text-soft)">
-          public demo
-        </p>
-        <p className="mt-1 text-[10px] text-(--text-faint)">
-          Changes are shared with everyone.
-        </p>
       </div>
     </aside>
   );
